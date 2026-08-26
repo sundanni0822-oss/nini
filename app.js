@@ -474,6 +474,84 @@ function parseOcrTextToWords(text) {
 
 // ---------- OCR 识别（Tesseract.js，免费本地方案）----------
 let tesseractWorker = null;
+async function ocrRecognizeImage(imageEl, detailed = false) {
+  if (typeof Tesseract === 'undefined') {
+    await new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+      s.onload = resolve; s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+  if (!tesseractWorker) {
+    tesseractWorker = await Tesseract.createWorker('eng');
+  }
+  const { data } = await tesseractWorker.recognize(imageEl);
+  if (!detailed) return data.text;
+  return {
+    text: data.text,
+    words: (data.words || []).map(w => ({
+      text: w.text,
+      x0: w.bbox.x0, y0: w.bbox.y0,
+      x1: w.bbox.x1, y1: w.bbox.y1
+    }))
+  };
+}
+
+// 分析批改照片：识别手写答案和 √/× 标记
+// 返回: [{word, recognizedText, hasCheck, hasCross, confidence, suggestedCorrect, suggestedWrong}]
+function analyzeGradingPhoto(ocrResult, targetWords) {
+  const words = ocrResult.words || [];
+  const results = [];
+  const checkPattern = /^[\u2713\u2714\u221A\u2717\u2718vV\\/\\\\]$/;
+  const crossPattern = /^[\u00D7\u2717\u2718xX*#\u2716]$/;
+
+  targetWords.forEach(target => {
+    const tw = target.word.toLowerCase();
+    let recognizedText = '';
+    let hasCheck = false;
+    let hasCross = false;
+    let confidence = 'low';
+
+    // 1. 查找手写答案（排除题目词本身）
+    const nearbyWords = words.filter(w => {
+      const wt = w.text.toLowerCase().trim();
+      if (wt === tw || wt === tw.replace(/[-']/g, '')) return false;
+      if (/^[a-zA-Z]+$/.test(wt) && wt.length >= 2 && wt.length <= 24) {
+        if (!recognizedText || wt.length > recognizedText.length) recognizedText = wt;
+        return true;
+      }
+      return false;
+    });
+
+    if (recognizedText) {
+      const rt = recognizedText.toLowerCase().replace(/[^a-z]/g, '');
+      const tt = tw.replace(/[^a-z]/g, '');
+      if (rt === tt) confidence = 'high';
+      else if (rt.length > 2 && (rt.includes(tt) || tt.includes(rt))) confidence = 'medium';
+    }
+
+    // 2. 扫描 √/× 符号
+    words.forEach(w => {
+      const t = w.text.trim();
+      if (checkPattern.test(t)) hasCheck = true;
+      if (crossPattern.test(t)) hasCross = true;
+    });
+
+    results.push({
+      word: target.word,
+      recognizedText,
+      hasCheck,
+      hasCross,
+      confidence,
+      suggestedCorrect: hasCheck || (confidence === 'high' && !hasCross),
+      suggestedWrong: hasCross
+    });
+  });
+
+  return results;
+}
+let tesseractWorker = null;
 async function ocrRecognizeImage(imageEl) {
   if (typeof Tesseract === 'undefined') {
     await new Promise((resolve, reject) => {
