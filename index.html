@@ -143,6 +143,7 @@ textarea { min-height: 80px; resize: vertical; }
 }
 .g-btn.correct.active { background: #eaf3de; border-color: #3b6d11; color: #3b6d11; }
 .g-btn.wrong.active { background: #fcebeb; border-color: #a32d2d; color: #a32d2d; }
+.g-btn:not(.active) { background: #f5f5f5; border-color: #ddd; color: #bbb; }
 .g-btn:hover { border-color: #999; }
 
 /* 上传照片 */
@@ -1845,7 +1846,7 @@ function refreshGrading() {
         this.classList.add('active');
       });
     });
-    $$('#gradeList .g-btn.correct').forEach(b => b.classList.add('active'));
+    // 默认全部未批改，用户必须逐词点选对/错
   }
   // 复习区
   renderReviewGrading(child.id, date);
@@ -1878,7 +1879,7 @@ function renderReviewGrading(childId, date) {
       this.classList.add('active');
     });
   });
-  $$('#reviewGradeList .g-btn.correct').forEach(b => b.classList.add('active'));
+  // 默认全部未批改，用户必须逐词点选对/错
 }
 function submitGradingPage() {
   const child = getActiveChild();
@@ -1886,6 +1887,14 @@ function submitGradingPage() {
   const date = $('#gradeDate').value || todayStr();
   const items = $$('#gradeList .grade-item');
   if (items.length === 0) { toast('没有可批改的词'); return; }
+  // 检查是否有未批改的词（既没有选对也没有选错）
+  const unchecked = Array.from(items).filter(item => !item.querySelector('.g-btn.active'));
+  if (unchecked.length > 0) {
+    toast(`还有 ${unchecked.length} 个词未批改，请逐词点选对或错`);
+    // 滚动到第一个未批改的词
+    unchecked[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
   const results = Array.from(items).map(item => {
     const wrong = item.querySelector('.g-btn.wrong.active');
     return { word: item.dataset.word, correct: !wrong };
@@ -1902,6 +1911,13 @@ function submitReviewPage() {
   const date = $('#gradeDate').value || todayStr();
   const items = $$('#reviewGradeList .grade-item');
   if (items.length === 0) { toast('没有复习词'); return; }
+  // 检查是否有未批改的词
+  const unchecked = Array.from(items).filter(item => !item.querySelector('.g-btn.active'));
+  if (unchecked.length > 0) {
+    toast(`还有 ${unchecked.length} 个复习词未批改，请逐词点选对或错`);
+    unchecked[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
   const results = Array.from(items).map(item => {
     const wrong = item.querySelector('.g-btn.wrong.active');
     return { word: item.dataset.word, correct: !wrong };
