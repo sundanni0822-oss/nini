@@ -1,0 +1,2046 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>小托福单词学习系统</title>
+<script src="vocab-data.js?v=20260825-2"></script>
+<script src="tj-vocab.js?v=20260825-2"></script>
+<script src="sishang-vocab.js?v=20260825-2"></script>
+<style>
+/* ================= 基础 ================= */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: #f5f5f7; color: #222; font-size: 14px;
+}
+
+/* ================= 顶部导航 ================= */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: #fff; border-bottom: 1px solid #eee;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 20px; flex-wrap: wrap; gap: 8px;
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-logo {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: #c0392b; color: #fff; display: flex;
+  align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 700;
+}
+.brand-name { font-size: 16px; font-weight: 600; }
+.brand-sub { font-size: 11px; color: #999; }
+
+.child-switch { display: flex; align-items: center; gap: 8px; }
+.child-switch select {
+  padding: 7px 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; background: #fff;
+}
+.btn-mini {
+  padding: 6px 12px; border: 1px solid #c0392b; background: #fff; color: #c0392b;
+  border-radius: 8px; font-size: 12px; cursor: pointer;
+}
+.btn-mini:hover { background: #fef5f4; }
+
+/* 导航 tabs */
+.nav-tabs {
+  display: flex; gap: 4px; padding: 0 20px; background: #fff;
+  border-bottom: 1px solid #eee; overflow-x: auto; flex-wrap: wrap;
+}
+.nav-tab {
+  padding: 12px 16px; cursor: pointer; font-size: 13px; color: #666;
+  border-bottom: 2px solid transparent; white-space: nowrap; background: none; border-top: none; border-left: none; border-right: none;
+}
+.nav-tab:hover { color: #c0392b; }
+.nav-tab.active { color: #c0392b; font-weight: 600; border-bottom-color: #c0392b; }
+
+/* ================= 页面容器 ================= */
+.page { display: none; padding: 20px; max-width: 1100px; margin: 0 auto; }
+.page.active { display: block; }
+
+.card {
+  background: #fff; border-radius: 14px; padding: 20px; margin-bottom: 16px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+.card-title { font-size: 15px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.card-title .tag {
+  font-size: 11px; background: #fef5f4; color: #c0392b; border-radius: 20px; padding: 2px 10px; font-weight: 500;
+}
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+/* 统计卡片 */
+.stat-card { background: #fff; border-radius: 14px; padding: 18px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+.stat-num { font-size: 28px; font-weight: 700; color: #c0392b; }
+.stat-label { font-size: 12px; color: #888; margin-top: 4px; }
+
+/* 表单 */
+label.lbl { display: block; font-size: 12px; color: #666; margin: 10px 0 6px; font-weight: 500; }
+input[type=text], input[type=date], input[type=number], select, textarea {
+  width: 100%; padding: 9px 12px; border: 1px solid #ddd; border-radius: 8px;
+  font-size: 14px; background: #fff; font-family: inherit;
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: #c0392b; }
+textarea { min-height: 80px; resize: vertical; }
+
+.btn {
+  padding: 10px 20px; border: none; border-radius: 9px; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all .15s;
+}
+.btn-primary { background: #c0392b; color: #fff; }
+.btn-primary:hover { background: #a32d22; }
+.btn-secondary { background: #fff; color: #c0392b; border: 1.5px solid #c0392b; }
+.btn-secondary:hover { background: #fef5f4; }
+.btn-ghost { background: #f0f0f2; color: #555; }
+.btn-ghost:hover { background: #e4e4e7; }
+.btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 7px; }
+
+/* 模式选择（类似 tab 按钮） */
+.mode-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.mode-btn {
+  padding: 9px 16px; border: 1.5px solid #ddd; border-radius: 9px; cursor: pointer;
+  font-size: 13px; background: #fff; transition: all .15s;
+}
+.mode-btn.active { border-color: #c0392b; background: #fef5f4; color: #c0392b; font-weight: 600; }
+
+/* 词列表/搜索结果 */
+.word-list { max-height: 420px; overflow-y: auto; border: 1px solid #eee; border-radius: 10px; }
+.word-item {
+  display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+  border-bottom: 1px solid #f3f3f3; cursor: pointer;
+}
+.word-item:hover { background: #fafafa; }
+.word-item.selected { background: #fef5f4; }
+.word-item .w { font-weight: 600; min-width: 120px; font-family: Georgia, serif; }
+.word-item .m { color: #666; font-size: 13px; flex: 1; }
+.word-item .src { font-size: 11px; color: #aaa; white-space: nowrap; }
+.word-item input[type=checkbox] { width: 16px; height: 16px; accent-color: #c0392b; }
+
+/* 搜索 */
+.search-box { position: relative; margin-bottom: 12px; }
+.search-box input { padding-left: 34px; }
+.search-box::before {
+  content: "🔍"; position: absolute; left: 10px; top: 9px; font-size: 14px;
+}
+
+/* 批改 */
+.grade-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+.grade-item {
+  border: 1.5px solid #eee; border-radius: 10px; padding: 10px 12px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.grade-item .g-word { font-weight: 600; font-family: Georgia, serif; font-size: 15px; }
+.grade-item .g-mean { color: #888; font-size: 12px; margin-top: 2px; }
+.grade-btns { display: flex; gap: 6px; }
+.g-btn {
+  width: 38px; height: 32px; border-radius: 8px; border: 1.5px solid #ddd;
+  background: #fff; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;
+}
+.g-btn.correct.active { background: #eaf3de; border-color: #3b6d11; color: #3b6d11; }
+.g-btn.wrong.active { background: #fcebeb; border-color: #a32d2d; color: #a32d2d; }
+.g-btn:hover { border-color: #999; }
+
+/* 上传照片 */
+.upload-area {
+  border: 2px dashed #ddd; border-radius: 12px; padding: 30px; text-align: center;
+  color: #999; cursor: pointer; transition: all .2s;
+}
+.upload-area:hover, .upload-area.dragover { border-color: #c0392b; color: #c0392b; background: #fef5f4; }
+.upload-area img { max-width: 100%; max-height: 300px; border-radius: 8px; margin-top: 10px; }
+.photo-preview { margin-top: 10px; text-align: center; }
+.photo-preview img { max-width: 100%; max-height: 360px; border-radius: 8px; border: 1px solid #eee; }
+
+/* 错题本 */
+.wrong-table { width: 100%; border-collapse: collapse; }
+.wrong-table th, .wrong-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+.wrong-table th { color: #888; font-weight: 500; font-size: 12px; }
+.stage-badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; background: #fef5f4; color: #c0392b; }
+.due-badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; background: #fff8e7; color: #7a5c00; }
+
+/* 日历 */
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.cal-day {
+  min-height: 70px; border-radius: 10px; border: 1px solid #eee; padding: 6px; background: #fff;
+  font-size: 12px; position: relative;
+}
+.cal-day .d { color: #999; font-size: 11px; }
+.cal-day.perfect { background: #eaf3de; border-color: #c0dd97; }
+.cal-day.partial { background: #fff8e7; border-color: #f0d38a; }
+.cal-day.failed { background: #fcebeb; border-color: #f09595; }
+.cal-day.future { opacity: .4; }
+.cal-day .cnt { font-size: 11px; margin-top: 4px; color: #555; }
+.cal-weekday { text-align: center; color: #999; font-size: 12px; padding: 6px 0; }
+
+/* ================= A4 默写纸 ================= */
+.preview-area { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 10px 0 40px; }
+.paper {
+  background: #fff; width: 210mm; height: 297mm; padding: 14mm 14mm 10mm;
+  box-shadow: 0 6px 30px rgba(0,0,0,0.10); font-family: Georgia, "Times New Roman", "Songti SC", serif;
+  color: #2c3e50; position: relative;
+  display: flex; flex-direction: column;
+  box-sizing: border-box; overflow: hidden;
+}
+.paper-top-stripe { position: absolute; top: 0; left: 0; right: 0; height: 8px; background: linear-gradient(90deg, #c0392b 0%, #c0392b 70%, #e8e8e8 70%, #e8e8e8 100%); }
+.paper-header { display: flex; justify-content: space-between; align-items: center; padding-top: 10px; padding-bottom: 8px; border-bottom: 2px solid #c0392b; margin-bottom: 8px; gap: 12px; }
+.paper-day-block { display: flex; align-items: baseline; gap: 10px; }
+.paper-day-tag {
+  display: inline-block; background: #c0392b; color: #fff; font-weight: 700;
+  padding: 3px 8px; border-radius: 12px; font-size: 9.5pt; letter-spacing: 2px;
+  font-family: Georgia, serif; line-height: 1;
+}
+.paper-day-num {
+  font-size: 26pt; font-weight: 700; color: #c0392b; font-family: Georgia, serif;
+  line-height: 1; letter-spacing: 1px;
+}
+.paper-day-sub {
+  font-size: 10pt; color: #888; font-style: italic; margin-top: 4px;
+}
+.paper-meta { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; font-size: 9pt; color: #555; }
+.paper-meta .item { display: flex; align-items: baseline; gap: 4px; }
+.paper-meta .label { color: #888; white-space: nowrap; }
+.paper-meta .value { color: #333; min-width: 80px; border-bottom: 1px solid #999; text-align: center; padding: 0 6px; font-weight: 600; }
+.paper-subtitle { font-size: 10pt; color: #666; margin: 8px 0 10px; font-style: italic; display: flex; justify-content: space-between; align-items: baseline; }
+.paper-subtitle .title-note { font-weight: 600; color: #c0392b; font-style: normal; }
+.page-marker { display: flex; justify-content: space-around; margin: 4px 0 8px; font-family: Georgia, serif; font-weight: 700; font-size: 14pt; color: #c0392b; }
+.page-marker span { display: inline-block; min-width: 24px; text-align: center; border-bottom: 1px dotted #c0392b; padding-bottom: 2px; }
+.word-table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 8px; flex-shrink: 0; }
+.word-table thead th { background: #fef5f4; color: #c0392b; font-size: 10.5pt; padding: 6px 6px; border-bottom: 1.5px solid #c0392b; font-weight: 600; text-align: left; }
+.word-table thead th.idx { width: 22px; text-align: center; }
+.word-table thead th.check { width: 22px; text-align: center; }
+.word-table thead th.word { width: 30%; }
+.word-table tbody tr { border-bottom: 1px dashed #c8c8c8; }
+.word-table tbody td { padding: 2px 6px; font-size: 10pt; vertical-align: middle; height: var(--row-h, 24px); }
+.word-table tbody td.idx { font-family: Georgia, serif; font-weight: 700; font-size: 10pt; color: #c0392b; text-align: center; background: #fff5f4; width: 22px; }
+.word-table tbody td.check { text-align: center; font-size: 12pt; color: #888; width: 22px; }
+.word-table tbody td.check::before { content: "☐"; }
+.word-table tbody td.word { font-weight: 600; font-family: Georgia, serif; color: #2c3e50; }
+.word-table tbody td.word .phonetic { font-weight: 400; font-size: 8.5pt; color: #999; font-style: italic; margin-left: 4px; }
+.word-table tbody td.word .pos { font-weight: 400; font-size: 8pt; color: #c0392b; margin-left: 4px; }
+.word-table tbody td.word .review-tag { display: inline-block; font-size: 7.5pt; background: #fff8e7; color: #7a5c00; border-radius: 3px; padding: 1px 4px; margin-left: 5px; font-weight: 400; }
+.word-table tbody td.meaning { border-bottom: 1px solid #333; color: transparent; }
+.word-table tbody td.meaning.show { color: #444; border-bottom: none; line-height: 1.3; }
+.word-table tbody tr.section-row td { background: #f9f9f9; color: #666; font-size: 9pt; font-weight: 600; border-bottom: 1px solid #ddd; }
+.word-table tbody tr.section-row td .sec-tag { color: #c0392b; }
+.paper-footer { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 8px; border-top: 1px solid #ddd; font-size: 9.5pt; color: #555; flex-shrink: 0; }
+.signature { display: inline-flex; align-items: baseline; gap: 6px; }
+.signature .label { color: #888; }
+.signature .line { display: inline-block; min-width: 90px; border-bottom: 1px solid #555; height: 16px; }
+.score-box { border: 1.5px solid #c0392b; border-radius: 6px; padding: 4px 10px; color: #c0392b; font-weight: 600; font-size: 10pt; display: inline-flex; gap: 8px; align-items: center; }
+.score-box .correct { font-family: Georgia, serif; font-size: 12pt; }
+.page-num { font-family: Georgia, serif; font-style: italic; color: #999; font-size: 10pt; }
+/* 彩虹屁鼓励语：底部小字贴纸感，占满一整行 */
+.paper-praise { flex-basis: 100%; margin-top: 3px; text-align: center; font-size: 9pt; color: #e67e22; font-weight: 600; letter-spacing: 0.3px; font-family: "PingFang SC", "Microsoft YaHei", sans-serif; }
+
+/* 中译英模式蓝色 */
+.paper.mode-zh2en .word-table thead th { background: #f0f5ff; color: #2c3e8c; }
+.paper.mode-zh2en .word-table thead th { border-bottom-color: #2c3e8c; }
+.paper.mode-zh2en .paper-header { border-bottom-color: #2c3e8c; }
+.paper.mode-zh2en .paper-day-tag { background: #2c3e8c; }
+.paper.mode-zh2en .page-marker { color: #2c3e8c; }
+.paper.mode-zh2en .paper-top-stripe { background: linear-gradient(90deg, #2c3e8c 0%, #2c3e8c 70%, #e8e8e8 70%, #e8e8e8 100%); }
+.paper.mode-zh2en .word-table tbody td.idx { color: #2c3e8c; background: #f0f3ff; }
+.paper.mode-zh2en .score-box { border-color: #2c3e8c; color: #2c3e8c; }
+
+/* ===== 左右对照模式（一纸两测，中间对折） ===== */
+.lr-wrap { display: flex; gap: 0; }
+.lr-col { flex: 1; min-width: 0; }
+.lr-fold {
+  width: 0; flex: 0 0 0; position: relative;
+  border-left: 1.5px dashed #bbb;
+  margin: 0 8px;
+}
+.lr-fold::after {
+  content: "对折"; position: absolute; top: 50%; left: -14px;
+  transform: rotate(-90deg); font-size: 7.5pt; color: #bbb; white-space: nowrap;
+  font-style: italic; font-family: Georgia, serif;
+}
+.lr-col .lr-col-title {
+  font-size: 9pt; font-weight: 600; color: #888; text-align: center;
+  padding: 4px 0 8px; border-bottom: 1px solid #ddd; margin-bottom: 6px;
+}
+.lr-col.left .lr-col-title { color: #c0392b; }
+.lr-col.right .lr-col-title { color: #2c3e8c; }
+.lr-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.lr-table tbody tr { border-bottom: 1px dashed #ddd; }
+.lr-table tbody td { padding: 4px 4px; font-size: 10pt; height: 26px; vertical-align: middle; }
+.lr-table tbody td.lr-idx { width: 22px; font-family: Georgia, serif; font-weight: 700; font-size: 9pt; color: #c0392b; text-align: center; }
+.lr-table tbody td.lr-check { width: 18px; text-align: center; font-size: 11pt; color: #888; }
+.lr-table tbody td.lr-check::before { content: "☐"; }
+.lr-table tbody td.lr-word { font-weight: 600; font-family: Georgia, serif; color: #2c3e50; overflow: hidden; text-overflow: ellipsis; }
+.lr-table tbody td.lr-word .phonetic { font-weight: 400; font-size: 7.5pt; color: #999; font-style: italic; margin-left: 3px; }
+.lr-table tbody td.lr-word .pos { font-weight: 400; font-size: 7pt; color: #c0392b; margin-left: 3px; }
+.lr-table tbody td.lr-mean { border-bottom: 1px solid #333; }
+.lr-table tbody td.lr-mean.show { color: #444; border-bottom: none; line-height: 1.2; }
+.lr-table tbody td.lr-mean-empty { border-bottom: 1px solid #333; }
+.lr-table tbody tr.lr-section td { background: #f9f9f9; font-size: 8.5pt; font-weight: 600; color: #666; border-bottom: 1px solid #ddd; }
+.lr-table tbody tr.lr-section td .sec-tag { color: #c0392b; }
+
+/* ===== 左右对照紧凑模式（42 词/页） ===== */
+.paper.mode-both { padding: 5mm 7mm 4mm; }
+.paper.mode-both .lr-wrap { display: flex; gap: 0; min-height: 0; flex-shrink: 0; margin-top: 1px; }
+.paper.mode-both .lr-col { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+/* 中缝偏左：左栏(看英写中)40% 偏窄，右栏(看中写英)60% 偏宽，英文书写更舒展 */
+.paper.mode-both .lr-col.left { flex: 4 1 0; }
+.paper.mode-both .lr-col.right { flex: 6 1 0; }
+.paper.mode-both .lr-col .lr-table { /* table height = rows × rowH 自然撑开，不 flex 撑满 */ }
+.paper.mode-both .paper-top-stripe { height: 4px; }
+.paper.mode-both .paper-header { padding-top: 2px; padding-bottom: 4px; margin-bottom: 3px; border-bottom-width: 1px; }
+.paper.mode-both .paper-day-tag { font-size: 8pt; padding: 2px 7px; border-radius: 10px; }
+.paper.mode-both .paper-day-num { font-size: 20pt; }
+.paper.mode-both .paper-day-sub { font-size: 8pt; margin-top: 1px; }
+.paper.mode-both .paper-meta { font-size: 7.5pt; gap: 1px; }
+.paper.mode-both .paper-meta .value { min-width: 56px; padding: 0 4px; }
+.paper.mode-both .paper-subtitle { margin: 2px 0 3px; font-size: 8pt; }
+.paper.mode-both .page-marker { margin: 1px 0 3px; font-size: 9pt; }
+.paper.mode-both .page-marker span { padding-bottom: 1px; }
+.paper.mode-both .lr-col-title { font-size: 7.5pt; padding: 2px 0 3px; margin-bottom: 2px; }
+.paper.mode-both .lr-fold { margin: 0 4px; }
+.paper.mode-both .lr-table tbody td { padding: 1px 2px; font-size: 8.5pt; height: var(--row-h, 5.7mm); }
+.paper.mode-both .lr-table tbody td.lr-idx { width: 16px; font-size: 7.5pt; }
+.paper.mode-both .lr-table tbody td.lr-check { font-size: 9pt; width: 14px; }
+.paper.mode-both .lr-table tbody td.lr-word .phonetic { font-size: 7pt; }
+.paper.mode-both .lr-table tbody td.lr-word .pos { font-size: 6.5pt; }
+.paper.mode-both .lr-table tbody td.lr-word .review-tag { font-size: 6.5pt; padding: 0 3px; }
+.paper.mode-both .paper-footer { padding-top: 4px; font-size: 7.5pt; }
+.paper.mode-both .signature .line { min-width: 56px; height: 12px; }
+.paper.mode-both .score-box { padding: 2px 6px; font-size: 8pt; }
+.paper.mode-both .score-box .correct { font-size: 9pt; }
+.paper.mode-both .page-num { font-size: 8pt; }
+.paper.mode-both .paper-praise { font-size: 7pt; margin-top: 2px; }
+
+@page { size: A4; margin: 0; }
+@media print {
+  body { background: #fff; }
+  .no-print { display: none !important; }
+  /* 只打印默写纸：隐藏页面其他所有内容 */
+  .page { display: none !important; }
+  #page-worksheet { display: block !important; }
+  #page-worksheet .card { display: none !important; }
+  .preview-area {
+    display: block !important;
+    padding: 0; gap: 0;
+  }
+  .paper {
+    box-shadow: none; margin: 0; width: 210mm; height: 297mm;
+    transform: none !important;   /* 防止小屏 scale(0.45) 泄漏到打印 */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    page-break-after: always;
+  }
+  .paper:last-child { page-break-after: auto; }
+}
+/* 下载 PDF 时临时强制取消 transform，保证按真实 A4 尺寸高清截图 */
+body.pdf-gen .paper { transform: none !important; }
+@media (max-width: 880px) {
+  .paper { transform: scale(0.45); transform-origin: top center; margin-bottom: -160mm; }
+  .paper:last-child { margin-bottom: 0; }
+}
+
+/* 提示 */
+.empty-tip { color: #aaa; text-align: center; padding: 30px; font-size: 13px; }
+.toast {
+  position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+  background: #333; color: #fff; padding: 10px 22px; border-radius: 30px;
+  font-size: 13px; z-index: 999; opacity: 0; transition: all .3s; pointer-events: none;
+}
+.toast.show { opacity: 1; }
+
+/* 模态 */
+.modal-mask {
+  position: fixed; inset: 0; background: rgba(0,0,0,.4); display: none;
+  align-items: center; justify-content: center; z-index: 200;
+}
+.modal-mask.show { display: flex; }
+.modal {
+  background: #fff; border-radius: 16px; padding: 24px; width: 90%; max-width: 420px;
+  box-shadow: 0 10px 40px rgba(0,0,0,.2);
+}
+.modal h3 { font-size: 16px; margin-bottom: 16px; }
+.modal .btn-row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+/* A4 图片查看（保存为图片） */
+.a4img-tip { background:#fff8e6; border:1px solid #f0d9a8; color:#8a6d1d; font-size:12px; line-height:1.7; border-radius:8px; padding:8px 12px; margin-bottom:12px; }
+.a4img-tip b { color:#6b5208; }
+.a4img-list { display:flex; flex-direction:column; gap:16px; max-height:68vh; overflow-y:auto; padding-right:4px; }
+.a4img-item { text-align:center; }
+.a4img-item img { width:100%; max-width:340px; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,.12); }
+.a4img-bar { display:flex; justify-content:space-between; align-items:center; margin-top:6px; font-size:12px; color:#666; }
+.a4img-bar a { color:#185fa5; font-weight:600; text-decoration:none; }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- ======== 顶部 ======== -->
+<div class="topbar no-print">
+  <div class="brand">
+    <div class="brand-logo">词</div>
+    <div>
+      <div class="brand-name">小托福单词学习系统</div>
+      <div class="brand-sub">拍照上传 · 默写纸 · 批改 · 艾宾浩斯复习 · 日历</div>
+    </div>
+  </div>
+  <div class="child-switch">
+    <label class="lbl" style="margin:0;font-size:12px;">当前孩子</label>
+    <select id="childSelect"></select>
+    <button class="btn-mini" id="btnAddChild">＋ 添加孩子</button>
+    <button class="btn-mini" id="btnManageKids">👥 管理孩子</button>
+  </div>
+</div>
+
+<div class="nav-tabs no-print">
+  <button class="nav-tab active" data-page="dashboard">📊 看板</button>
+  <button class="nav-tab" data-page="words">📚 词库</button>
+  <button class="nav-tab" data-page="worksheet">🖨️ 默写纸</button>
+  <button class="nav-tab" data-page="grading">✅ 批改</button>
+  <button class="nav-tab" data-page="wrong">📕 错题本</button>
+  <button class="nav-tab" data-page="calendar">📅 日历</button>
+</div>
+
+<!-- ======== 看板（今日概览 + 班级看板合并） ======== -->
+<div class="page active" id="page-dashboard">
+  <div class="card">
+    <div class="card-title">📌 今日任务 <span class="tag" id="dashChildTag">未选孩子</span> <span class="tag" id="dashBookTag" style="background:#185fa5;color:#fff;">小托福</span></div>
+    <div class="grid-3" style="margin-bottom:6px;">
+      <div class="stat-card"><div class="stat-num" id="dashNewCount">-</div><div class="stat-label">今日计划新词</div></div>
+      <div class="stat-card"><div class="stat-num" id="dashDueCount">-</div><div class="stat-label">今日到期复习</div></div>
+      <div class="stat-card"><div class="stat-num" id="dashWrongTotal">-</div><div class="stat-label">错题本总数</div></div>
+    </div>
+    <div id="dashPlanBox" style="margin-top:10px;"></div>
+    <div id="dashLearnBox"></div>
+    <div id="dashStartInfo"></div>
+    <div id="dashStartPicker"></div>
+    <div id="dashAllDays"></div>
+    <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-primary btn-sm" onclick="goPage('worksheet')">生成今日默写纸</button>
+      <button class="btn btn-secondary btn-sm" onclick="goPage('grading')">批改今日默写</button>
+      <button class="btn btn-ghost btn-sm" onclick="goPage('words')">管理词库</button>
+    </div>
+  </div>
+
+  <div class="card" style="border-left:4px solid #c0392b;">
+    <div class="card-title">📊 班级看板 · <span id="dashGroupName">我的班级</span> <span class="tag" id="dashTodayTag">-</span></div>
+    <div class="grid-3" style="margin-bottom:6px;">
+      <div class="stat-card"><div class="stat-num" id="dashTotalKids">-</div><div class="stat-label">班级孩子数</div></div>
+      <div class="stat-card"><div class="stat-num" id="dashCheckedToday">-</div><div class="stat-label">昨日已打卡</div></div>
+      <div class="stat-card"><div class="stat-num" id="dashMissedToday">-</div><div class="stat-label">昨日缺卡</div></div>
+    </div>
+    <div id="dashMissedWarn" style="margin-top:10px;"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">✅ 打卡状态（昨日）</div>
+    <div id="dashCheckinList"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔍 班级共性错词 <span class="tag">多个孩子都错过的词</span></div>
+    <div id="dashSharedWrong"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📉 各孩子正确率与错词 Top3</div>
+    <div id="dashAccuracy"></div>
+  </div>
+</div>
+
+<!-- ======== 词库 ======== -->
+<div class="page" id="page-words">
+  <div class="card">
+    <div class="card-title">📷 上传单词图片 → 真实识别 <span class="tag">系统自动 OCR</span></div>
+    <div style="font-size:13px;color:#555;line-height:1.9;background:#f8f8fa;border-radius:10px;padding:12px 16px;margin-bottom:14px;">
+      ① 上传书页照片 → ② 点「开始识别」→ 系统自动读出单词 → ③ 核对后保存为新 DAY<br>
+      <span style="font-size:12px;color:#888;">识别引擎：Tesseract.js（免费本地识别）。识别不准时也可拍照发我人工校正。</span>
+    </div>
+    <div class="upload-area" id="uploadArea">
+      点击选择或拖拽单词书照片到这里<br>
+      <span style="font-size:12px;">支持多张 · 选第一张用于识别</span>
+    </div>
+    <input type="file" id="uploadInput" accept="image/*" style="display:none" multiple>
+    <div id="uploadPreview" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;"></div>
+
+    <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <button class="btn btn-primary btn-sm" id="btnOcr">🔍 开始识别照片</button>
+      <button class="btn btn-ghost btn-sm" onclick="clearOcrResult()">清空识别结果</button>
+      <span id="ocrStatus" style="font-size:12px;color:#888;"></span>
+    </div>
+
+    <div id="ocrResultBox" style="display:none;margin-top:14px;">
+      <label class="lbl">识别出的单词（可编辑核对）</label>
+      <textarea id="ocrWordsText" style="min-height:160px;font-family:monospace;font-size:13px;"></textarea>
+      <div style="margin-top:10px;display:flex;gap:10px;align-items:center;">
+        <label class="lbl" style="margin:0;">DAY 标题：</label>
+        <input type="text" id="ocrDayTitle" placeholder="例如：DAY 5" style="max-width:200px;">
+        <button class="btn btn-primary btn-sm" onclick="saveOcrDay()">✅ 保存为新 DAY</button>
+        <span id="ocrSaveResult" style="font-size:12px;color:#3b6d11;"></span>
+      </div>
+    </div>
+    <div style="margin-top:12px;font-size:12px;color:#888;">
+      提示：保存后该 DAY 会出现在「默写纸」页的下拉里，直接选中即可生成。也可以在下方的「手动添加」粘贴（用于没有图片的补充）。
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">✍️ 手动添加 / 批量粘贴</div>
+    <label class="lbl">支持一行一个词，格式：<code>word [音标] 词性. 释义</code> 或 <code>word|释义</code></label>
+    <textarea id="addWordsText" placeholder="例如：&#10;abandon [ə'bændən] vt. 放弃&#10;abroad [ə'brɔːd] adv. 在国外&#10;academic [ˌækə'demɪk] adj. 学术的"></textarea>
+    <div style="margin-top:10px;display:flex;gap:10px;">
+      <button class="btn btn-primary btn-sm" onclick="handleAddWords()">添加到词库</button>
+      <span id="addWordsResult" style="align-self:center;font-size:12px;color:#3b6d11;"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📚 词库总览 <span class="tag" id="wordTotalTag">-</span></div>
+    <div class="search-box"><input type="text" id="libSearch" placeholder="搜索整个词库…"></div>
+    <div class="word-list" id="libWordList" style="max-height:360px;"></div>
+  </div>
+</div>
+
+<!-- ======== 默写纸 ======== -->
+<div class="page" id="page-worksheet">
+  <div class="card">
+    <div class="card-title">🖨️ 生成默写纸</div>
+
+    <label class="lbl">词库</label>
+    <select id="wsBookSelect">
+      <option value="tj">小托福</option>
+      <option value="sishang">沪教四上</option>
+    </select>
+
+    <label class="lbl" style="margin-top:12px;" id="wsDayLabel">选择 DAY / 单元</label>
+    <div id="wsDayPicker" style="margin-top:10px;">
+      <select id="wsDaySelect"></select>
+    </div>
+
+    <div style="margin-top:8px;font-size:11px;color:#888;line-height:1.5;">默认「统一 + 错题整理」：若已选当前孩子，会自动带上他到期的艾宾浩斯复习词。</div>
+
+    <label class="lbl" style="margin-top:12px;">默写方向</label>
+    <div class="mode-row">
+      <button class="mode-btn active" data-wsdir="both" onclick="setWsDir('both')">左右对照（一纸两测，中间对折）</button>
+      <button class="mode-btn" data-wsdir="en2zh" onclick="setWsDir('en2zh')">看英文写中文</button>
+      <button class="mode-btn" data-wsdir="zh2en" onclick="setWsDir('zh2en')">看中文写英文</button>
+    </div>
+    <label class="lbl">孩子姓名（打印在纸上）</label>
+    <input type="text" id="wsName" value="" style="max-width:240px;">
+    <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="generateWorksheet()">生成默写纸</button>
+      <button class="btn btn-primary" style="background:#185fa5;" id="btnDownloadPdf" onclick="downloadPdf()">⬇️ 下载 PDF</button>
+      <button class="btn btn-primary" style="background:#7a5caf;" id="btnSaveImages" onclick="saveA4Images()">🖼️ 保存 A4 图片</button>
+      <button class="btn btn-secondary" onclick="printWorksheet()">打印</button>
+      <button class="btn btn-ghost" id="btnPrintAllKids" title="为所有孩子各生成一张（统一+错题整理），一次打印">🖨️ 批量生成所有孩子</button>
+      <span id="wsInfo" style="align-self:center;font-size:12px;color:#888;"></span>
+    </div>
+    <div style="margin-top:6px;font-size:12px;color:#999;">💡 清晰度提示：「打印」为浏览器矢量输出，最清晰；「下载 PDF」已升级为约 300 DPI 无损高清版。若页面很宽，建议点「打印」→ 另存为 PDF。</div>
+  </div>
+  <div class="preview-area" id="wsPreview"></div>
+</div>
+
+<!-- ======== 批改 ======== -->
+<div class="page" id="page-grading">
+  <div class="card">
+    <div class="card-title">✅ 批改默写 <span class="tag">错词自动进错题本</span></div>
+    <div class="grid-2">
+      <div>
+        <label class="lbl">选择孩子</label>
+        <select id="gradeChildSelect"></select>
+        <label class="lbl">批改日期（当天默写的词 = 当日计划词）</label>
+        <input type="date" id="gradeDate">
+        <label class="lbl">上传默写纸照片（可不上传，对照屏幕批改）</label>
+        <div class="upload-area" id="gradeUploadArea">点击选择默写纸照片</div>
+        <input type="file" id="gradeUploadInput" accept="image/*" style="display:none">
+        <div class="photo-preview" id="gradePhotoPreview"></div>
+        <div style="margin-top:12px;font-size:12px;color:#888;">
+          也可以直接拍照发我，我帮你识别哪些词写错了。
+        </div>
+      </div>
+      <div>
+        <label class="lbl">正确答案对照表（逐词点对/错）</label>
+        <div id="gradeList"></div>
+        <div style="margin-top:12px;display:flex;gap:10px;align-items:center;">
+          <button class="btn btn-primary btn-sm" onclick="submitGradingPage()">提交批改结果</button>
+          <span id="gradeResult" style="font-size:12px;"></span>
+        </div>
+        <div id="reviewGradeSection" style="margin-top:16px;border-top:1px dashed #ddd;padding-top:12px;">
+          <label class="lbl">复习区批改（今日到期的艾宾浩斯复习词，如无可跳过）</label>
+          <div id="reviewGradeList"></div>
+          <div style="margin-top:10px;display:flex;gap:10px;">
+            <button class="btn btn-secondary btn-sm" onclick="submitReviewPage()">提交复习批改</button>
+            <span id="reviewGradeResult" style="font-size:12px;align-self:center;"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======== 错题本 ======== -->
+<div class="page" id="page-wrong">
+  <div class="card">
+    <div class="card-title">📕 错题本 <span class="tag" id="wrongChildTag">-</span></div>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;">
+      <select id="wrongChildSelect" style="max-width:200px;"></select>
+      <button class="btn btn-secondary btn-sm" onclick="printWrongBook()">打印错题本 A4</button>
+      <span style="font-size:12px;color:#888;">复习间隔：第 1 → 3 → 7 → 15 → 30 天</span>
+    </div>
+    <div id="wrongList"></div>
+  </div>
+</div>
+
+<!-- ======== 日历 ======== -->
+<div class="page" id="page-calendar">
+  <div class="card">
+    <div class="card-title">📅 学习日历 <span class="tag">家长跟踪</span></div>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
+      <select id="calChildSelect" style="max-width:200px;"></select>
+      <button class="btn btn-ghost btn-sm" onclick="calShiftMonth(-1)">‹ 上月</button>
+      <span id="calMonthLabel" style="font-size:14px;font-weight:600;">-</span>
+      <button class="btn btn-ghost btn-sm" onclick="calShiftMonth(1)">下月 ›</button>
+      <button class="btn btn-ghost btn-sm" onclick="calShiftMonth(0)">回到本月</button>
+    </div>
+    <div class="calendar-weekdays" style="display:grid;grid-template-columns:repeat(7,1fr);">
+      <div class="cal-weekday">一</div><div class="cal-weekday">二</div><div class="cal-weekday">三</div>
+      <div class="cal-weekday">四</div><div class="cal-weekday">五</div><div class="cal-weekday">六</div>
+      <div class="cal-weekday">日</div>
+    </div>
+    <div class="calendar-grid" id="calGrid"></div>
+    <div style="margin-top:14px;font-size:12px;color:#888;display:flex;gap:16px;">
+      <span><span style="display:inline-block;width:12px;height:12px;background:#eaf3de;border-radius:3px;vertical-align:-1px;"></span> 全对</span>
+      <span><span style="display:inline-block;width:12px;height:12px;background:#fff8e7;border-radius:3px;vertical-align:-1px;"></span> 有错</span>
+      <span><span style="display:inline-block;width:12px;height:12px;background:#fcebeb;border-radius:3px;vertical-align:-1px;"></span> 全错</span>
+      <span><span style="display:inline-block;width:12px;height:12px;background:#fff;border:1px solid #eee;border-radius:3px;vertical-align:-1px;"></span> 未完成</span>
+    </div>
+  </div>
+</div>
+
+<!-- ======== 添加孩子模态 ======== -->
+<div class="modal-mask" id="childModal">
+  <div class="modal">
+    <h3>添加孩子</h3>
+    <label class="lbl">孩子姓名</label>
+    <input type="text" id="newChildName" placeholder="例如：乐乐">
+    <label class="lbl">年级（可选）</label>
+    <input type="text" id="newChildGrade" placeholder="例如：五年级">
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeChildModal()">取消</button>
+      <button class="btn btn-primary" onclick="confirmAddChild()">添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======== 管理孩子模态 ======== -->
+<div class="modal-mask" id="kidsModal">
+  <div class="modal" style="max-width:560px;">
+    <h3>👥 管理孩子</h3>
+    <div id="kidsList" style="max-height:240px;overflow-y:auto;margin-bottom:14px;"></div>
+    <div style="border-top:1px dashed #eee;padding-top:12px;margin-bottom:8px;">
+      <label class="lbl" style="margin:0 0 6px 0;">📋 批量粘贴姓名（每行一个；可加年级：姓名|年级）</label>
+      <textarea id="batchKidsText" placeholder="Kelsea&#10;马马&#10;谭乐溪&#10;Flora&#10;奕霖&#10;许许&#10;Jessie&#10;AYU&#10;Seven棋&#10;刘子&#10;安昕&#10;Alice" style="min-height:90px;font-size:13px;"></textarea>
+      <div style="margin-top:8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <button class="btn btn-primary btn-sm" onclick="batchAddKids()">批量添加</button>
+        <span id="batchAddResult" style="font-size:12px;color:#3b6d11;"></span>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeKidsModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======== 保存 A4 图片 ======== -->
+<div class="modal-mask" id="a4ImagesModal">
+  <div class="modal" style="max-width:460px;">
+    <h3>🖼️ 保存 A4 图片（每页一张）</h3>
+    <div class="a4img-tip">📱 手机：<b>长按图片</b>即可保存到相册（微信/浏览器通用）<br>💻 电脑：点图片下方的「下载原图」</div>
+    <div class="a4img-list" id="a4ImagesList"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeA4ImagesModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======== 编辑孩子模态 ======== -->
+<div class="modal-mask" id="editChildModal">
+  <div class="modal">
+    <h3>编辑孩子</h3>
+    <label class="lbl">孩子姓名</label>
+    <input type="text" id="editChildName">
+    <label class="lbl">年级（可选）</label>
+    <input type="text" id="editChildGrade" placeholder="例如：五年级">
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeEditChildModal()">取消</button>
+      <button class="btn btn-primary" onclick="confirmEditChild()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js?v=20260825-2"></script>
+<script>
+/* =========================================================
+   界面层
+   ========================================================= */
+
+// ---------- 全局状态 ----------
+let currentPage = 'home';
+let wsDir = 'both';        // en2zh | zh2en | both
+let calOffset = 0;          // 日历月份偏移
+let libSearchTerm = '';
+
+// ---------- 初始化 ----------
+function init() {
+  loadStore();
+  if (store.children.length === 0) {
+    // 默认建一个孩子示例
+    addChild('乐乐', '五年级');
+  }
+  // 默认日期
+  $('#gradeDate').value = todayStr();
+  $('#wsName').value = getActiveChild() ? getActiveChild().name : '';
+  refreshAll();
+  setInterval(() => refreshDashboard(), 60000); // 每分钟刷新看板
+}
+
+// ---------- 导航 ----------
+function goPage(page) {
+  currentPage = page;
+  $$('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.page === page));
+  $$('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + page));
+  refreshPage(page);
+}
+function refreshPage(page) {
+  if (page === 'dashboard') refreshDashboard();
+  if (page === 'words') refreshWords();
+  if (page === 'worksheet') refreshWorksheet();
+  if (page === 'grading') refreshGrading();
+  if (page === 'wrong') refreshWrong();
+  if (page === 'calendar') refreshCalendar();
+}
+function refreshAll() {
+  refreshChildSelect();
+  $$('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.page === currentPage));
+  refreshPage(currentPage);
+}
+
+// ---------- 孩子 ----------
+function refreshChildSelect() {
+  const opts = store.children.map(c => `<option value="${c.id}">${c.name}${c.grade ? '（' + c.grade + '）' : ''}</option>`).join('');
+  const selects = ['childSelect', 'gradeChildSelect', 'wrongChildSelect', 'calChildSelect'];
+  selects.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = opts;
+    const cur = getActiveChild();
+    if (cur) el.value = cur.id;
+  });
+}
+$('#childSelect').addEventListener('change', e => {
+  setActiveChild(e.target.value);
+  $('#wsName').value = getActiveChild() ? getActiveChild().name : '';
+  refreshAll();
+});
+$('#btnAddChild').addEventListener('click', () => $('#childModal').classList.add('show'));
+$('#btnManageKids').addEventListener('click', openKidsModal);
+const bpa = $('#btnPrintAllKids');
+if (bpa) bpa.addEventListener('click', batchPrintAllKids);
+$('#newChildName').addEventListener('keydown', e => { if (e.key === 'Enter') confirmAddChild(); });
+function closeChildModal() { $('#childModal').classList.remove('show'); }
+function confirmAddChild() {
+  const name = $('#newChildName').value.trim();
+  if (!name) { toast('请输入孩子姓名'); return; }
+  const grade = $('#newChildGrade').value.trim();
+  const c = addChild(name, grade);
+  $('#newChildName').value = ''; $('#newChildGrade').value = '';
+  closeChildModal();
+  setActiveChild(c.id);
+  $('#wsName').value = c.name;
+  toast(`已添加孩子：${c.name}`);
+  refreshAll();
+}
+
+// ---------- 孩子管理 ----------
+function openKidsModal() {
+  renderKidsList();
+  $('#kidsModal').classList.add('show');
+}
+function closeKidsModal() { $('#kidsModal').classList.remove('show'); }
+function renderKidsList() {
+  const kids = getChildren();
+  const box = $('#kidsList');
+  if (kids.length === 0) {
+    box.innerHTML = '<div class="empty-tip">还没有孩子，点「＋ 添加孩子」添加</div>';
+    return;
+  }
+  box.innerHTML = kids.map(c => {
+    const cd = getChildData(c.id);
+    const wrongN = Object.keys(cd.wrong || {}).length;
+    const acc = getChildAccuracy(c.id);
+    return `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid #eee;border-radius:10px;margin-bottom:8px;">
+        <div style="flex:1;">
+          <div style="font-weight:600;">${c.name}${c.grade ? '（' + c.grade + '）' : ''} ${store.activeChildId === c.id ? '<span style="font-size:10px;background:#fef5f4;color:#c0392b;border-radius:10px;padding:1px 6px;">当前</span>' : ''}</div>
+          <div style="font-size:11px;color:#888;margin-top:2px;">错词 ${wrongN} · 正确率 ${acc ? acc.rate + '%' : '-'}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <button class="btn-mini" onclick="selectKid('${c.id}')">设为当前</button>
+          <button class="btn-mini" onclick="openEditChild('${c.id}')">编辑</button>
+          <button class="btn-mini" style="border-color:#a32d2d;color:#a32d2d;" onclick="removeKid('${c.id}','${c.name}')">删除</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+function selectKid(id) {
+  setActiveChild(id);
+  const c = getActiveChild();
+  if (c) {
+    wsBook = c.bookId || 'tj';
+    const sel = $('#wsBookSelect');
+    if (sel) sel.value = wsBook;
+    $('#wsName').value = c.name;
+  } else {
+    $('#wsName').value = '';
+  }
+  renderKidsList();
+  refreshAll();
+  toast('已切换孩子');
+}
+let editingKidId = null;
+function openEditChild(id) {
+  const c = getChildren().find(x => x.id === id);
+  if (!c) return;
+  editingKidId = id;
+  $('#editChildName').value = c.name;
+  $('#editChildGrade').value = c.grade || '';
+  $('#editChildModal').classList.add('show');
+}
+function closeEditChildModal() { $('#editChildModal').classList.remove('show'); editingKidId = null; }
+function confirmEditChild() {
+  const name = $('#editChildName').value.trim();
+  if (!name) { toast('请输入孩子姓名'); return; }
+  const c = getChildren().find(x => x.id === editingKidId);
+  if (!c) { closeEditChildModal(); return; }
+  c.name = name;
+  c.grade = $('#editChildGrade').value.trim();
+  saveStore();
+  closeEditChildModal();
+  toast(`已更新：${c.name}`);
+  renderKidsList();
+  refreshAll();
+}
+function removeKid(id, name) {
+  if (!confirm(`确定删除孩子「${name}」吗？\n该孩子的错题本、打卡记录将一并删除，且不可恢复。`)) return;
+  deleteChild(id);
+  toast(`已删除孩子：${name}`);
+  renderKidsList();
+  refreshAll();
+}
+
+// 批量添加孩子（每行一个；可写"姓名|年级"）
+function batchAddKids() {
+  const text = $('#batchKidsText').value.trim();
+  if (!text) { toast('请粘贴姓名列表'); return; }
+  const lines = text.split(/\n+/).map(l => l.trim()).filter(Boolean);
+  const existing = new Set(getChildren().map(c => c.name.toLowerCase()));
+  let added = 0, skipped = 0;
+  lines.forEach(line => {
+    let name = line, grade = '';
+    if (line.includes('|')) {
+      [name, grade] = line.split('|').map(s => s.trim());
+    }
+    if (!name) return;
+    if (existing.has(name.toLowerCase())) { skipped++; return; }
+    addChild(name, grade);
+    added++;
+  });
+  $('#batchKidsText').value = '';
+  const msg = `✅ 已添加 ${added} 个${skipped ? `（跳过 ${skipped} 个已存在）` : ''}`;
+  $('#batchAddResult').textContent = msg;
+  toast(msg);
+  renderKidsList();
+  refreshAll();
+  setTimeout(() => $('#batchAddResult').textContent = '', 4000);
+}
+
+// 跳转默写纸页并自动选中指定 DAY
+function quickGoWs(dayTitle) {
+  goPage('worksheet');
+  // 等待 wsDaySelect 构建
+  setTimeout(() => {
+    const sel = $('#wsDaySelect');
+    if (!sel) return;
+    fillWsDaySelect();
+    const opt = Array.from(sel.options).find(o => o.dataset.title === dayTitle);
+    if (opt) { sel.value = opt.value; refreshWorksheet(); }
+  }, 50);
+}
+function dashSetStartDate() {
+  const v = $('#dashStartDate').value;
+  if (!v) { toast('请选择起点日期'); return; }
+  setStartDate(v);
+  refreshDashboard();
+  toast('学习起点已设置为 ' + v);
+}
+
+// ---------- 班级看板（含今日任务） ----------
+function refreshDashboard() {
+  // ===== 今日任务区（版本感知） =====
+  const child = getActiveChild();
+  const date = todayStr();
+  const book = child ? getActiveBook(child) : BOOKS.tj;
+  const due = child ? getDueReviewWords(child.id, date, book.id) : [];
+  const cd = child ? getChildData(child.id) : { wrong: {} };
+  const recommended = child ? getTodayNode(child, date) : null;
+  const newCount = recommended ? recommended.words.length : 0;
+  $('#dashNewCount').textContent = newCount;
+  $('#dashDueCount').textContent = due.length;
+  $('#dashWrongTotal').textContent = child ? Object.keys(cd.wrong || {}).length : 0;
+  $('#dashChildTag').textContent = child ? child.name : '未选孩子';
+  const dbTag = $('#dashBookTag'); if (dbTag) dbTag.textContent = book.name;
+
+  // 今日推荐节点（版本感知）
+  let learnBox = '';
+  if (recommended) {
+    const isUnit = book.nodeType === 'unit';
+    const tagLabel = isUnit ? 'UNIT' : 'DAY';
+    const roundLabel = recommended.round > 1 ? `<span style="font-size:11px;background:#fff;color:#c0392b;border:1px solid #c0392b;border-radius:10px;padding:1px 7px;margin-left:6px;">第 ${recommended.round} 轮</span>` : '';
+    learnBox = `
+      <div style="margin-top:12px;background:linear-gradient(90deg,#fff5f4,#fef8e7);border:1.5px solid #c0392b;border-radius:10px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span class="paper-day-tag" style="background:#c0392b;color:#fff;font-size:10pt;padding:3px 9px;">${tagLabel}</span>
+          <span style="font-size:24pt;font-weight:700;color:#c0392b;font-family:Georgia,serif;line-height:1;">${recommended.num}</span>
+          ${roundLabel}
+          <div>
+            <div style="font-weight:600;">${recommended.title}${isUnit ? ' · 沪教四上' : ''}</div>
+            <div style="font-size:11pt;color:#666;">${recommended.words.length} 词 · ${recommended.source}</div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="quickGoWs('${recommended.title.replace(/'/g, "\\'")}')">📝 默写今天</button>
+      </div>`;
+  } else if (book.getNodes().length === 0) {
+    learnBox = `<div style="margin-top:12px;font-size:13px;color:#888;">「${book.name}」还没有可导出的词——${book.id === 'tj' ? '到「词库」页上传书页照片识别成 DAY 即可。' : '词库数据未加载。'}</div>`;
+  } else {
+    learnBox = `<div style="margin-top:12px;font-size:13px;color:#888;">📚 所有 ${book.getNodes().length} 个${book.nodeType === 'unit' ? '单元' : ' DAY '}都学完一轮了，恭喜！可继续循环巩固。</div>`;
+  }
+  const startInfo = `<div style="margin-top:8px;font-size:11px;color:#999;">📅 学习起点：${store.settings ? store.settings.startDate : todayStr()} · 已学 <b>${book.getNodes().length}</b> 个${book.nodeType === 'unit' ? '单元' : ' DAY '}（${book.name}）</div>`;
+
+  // 学习起点设置快捷入口
+  const startPicker = `<div style="margin-top:10px;display:flex;align-items:center;gap:8px;font-size:12px;color:#888;">
+    <span>起点日：</span><input type="date" value="${store.settings ? store.settings.startDate : todayStr()}" id="dashStartDate" style="max-width:140px;font-size:12px;">
+    <button class="btn-mini" onclick="dashSetStartDate()">设置</button>
+  </div>`;
+
+  const pbox = $('#dashPlanBox');
+  const todayAssign = child ? ((store.assignments || {})[child.id + '|' + date]) : null;
+  if (todayAssign && todayAssign.words.length) {
+    const bname = todayAssign.bookId === 'sishang' ? '沪教四上' : '小托福';
+    pbox.innerHTML = `
+      <div style="font-size:13px;color:#555;margin-bottom:10px;">
+        <b>${child.name}</b> 今天已生成默写纸 · ${bname} · 共 ${todayAssign.words.length} 词
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        ${todayAssign.words.slice(0, 50).map(w => `<span style="font-size:12px;background:#f5f5f7;border-radius:6px;padding:3px 8px;">${w.word}</span>`).join('')}
+        ${todayAssign.words.length > 50 ? `<span style="font-size:12px;color:#999;">…等 ${todayAssign.words.length} 词</span>` : ''}
+      </div>`;
+  } else if (recommended) {
+    pbox.innerHTML = `
+      <div style="font-size:13px;color:#888;">今日任务 <b>${recommended.title}</b> · 共 ${recommended.words.length} 词。去「默写纸」为${child ? child.name : '孩子'}生成后即在此显示进度。</div>`;
+  } else {
+    pbox.innerHTML = `<div style="font-size:13px;color:#888;">还没有可导出的词，请先设置学习起点或识别词库。</div>`;
+  }
+  $('#dashLearnBox').innerHTML = learnBox;
+  $('#dashStartInfo').innerHTML = startInfo;
+  $('#dashStartPicker').innerHTML = startPicker;
+  if (due.length > 0 && child) {
+    pbox.innerHTML += `
+      <div style="margin-top:12px;font-size:12px;color:#7a5c00;background:#fff8e7;border-radius:8px;padding:8px 12px;">
+        🔁 ${child.name} 今天有 ${due.length} 个错词到期复习（艾宾浩斯），会自动出现在「统一+错题整理」默写纸的复习区。
+      </div>`;
+  }
+  // 全部节点进度列表（版本感知）
+  const nodes = book.getNodes();
+  if (nodes.length > 0) {
+    const nodeLabel = book.nodeType === 'unit' ? '单元' : 'DAY';
+    const dayListHtml = `
+      <div style="margin-top:10px;font-size:12px;color:#666;">
+        <details><summary style="cursor:pointer;color:#c0392b;font-weight:500;">📚 查看全部 ${nodeLabel} 进度（${nodes.length} 个 · ${book.name}）</summary>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">
+          ${nodes.map(d => {
+            const isToday = recommended && d.num === recommended.num;
+            return `<span style="font-size:11px;background:${isToday ? '#fef5f4' : '#f5f5f7'};color:${isToday ? '#c0392b' : '#888'};border-radius:6px;padding:3px 8px;border:${isToday ? '1px solid #c0392b' : '1px solid #eee'};">${d.title} · ${d.words.length}词</span>`;
+          }).join('')}
+        </div>
+      </details></div>`;
+    $('#dashAllDays').innerHTML = dayListHtml;
+  }
+
+  // ===== 班级看板区 =====
+  const yesterday = addDays(-1);
+  $('#dashGroupName').textContent = store.groupName || '我的班级';
+  $('#dashTodayTag').textContent = '统计日期：' + yesterday;
+
+  const kids = store.children;
+  $('#dashTotalKids').textContent = kids.length;
+
+  const checkins = getClassCheckin(yesterday);
+  const checkedCount = checkins.filter(c => c.checked).length;
+  const missed = checkins.filter(c => !c.checked);
+  $('#dashCheckedToday').textContent = checkedCount;
+  $('#dashMissedToday').textContent = missed.length;
+
+  // 缺卡提醒
+  const warn = $('#dashMissedWarn');
+  if (missed.length === 0) {
+    warn.innerHTML = `<div style="font-size:13px;color:#3b6d11;background:#eaf3de;border-radius:8px;padding:10px 14px;">🎉 昨天全员打卡！孩子们都很棒</div>`;
+  } else {
+    warn.innerHTML = `
+      <div style="font-size:13px;color:#a32d2d;background:#fcebeb;border-radius:8px;padding:12px 14px;">
+        ⚠️ <b>${missed.length} 位孩子昨天没打卡默写</b>，记得提醒：${missed.map(m => `<b>${m.child.name}</b>`).join('、')}
+      </div>`;
+  }
+
+  // 打卡状态列表
+  const list = $('#dashCheckinList');
+  if (kids.length === 0) {
+    list.innerHTML = '<div class="empty-tip">还没有孩子，先添加孩子</div>';
+  } else {
+    list.innerHTML = `
+      <table class="wrong-table">
+        <thead><tr><th>孩子</th><th>昨日打卡</th><th>连续打卡</th><th>累计正确率</th><th>错词数</th></tr></thead>
+        <tbody>
+          ${checkins.map(c => {
+            const acc = getChildAccuracy(c.child.id);
+            const wrongN = Object.keys(getChildData(c.child.id).wrong || {}).length;
+            return `<tr>
+              <td style="font-weight:600;">${c.child.name}${c.child.grade ? '（' + c.child.grade + '）' : ''}</td>
+              <td>${c.checked ? '<span style="color:#3b6d11;font-weight:600;">✓ 已打卡</span>' : '<span style="color:#a32d2d;font-weight:600;">✗ 缺卡</span>'}</td>
+              <td>🔥 ${c.streak} 天</td>
+              <td>${acc ? acc.rate + '%' : '-'}</td>
+              <td>${wrongN}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  // 共性错词（按当前版本隔离）
+  const shared = getClassSharedWrong(10, child ? child.bookId : 'tj');
+  const sw = $('#dashSharedWrong');
+  sw.innerHTML = shared.length === 0 ? '<div class="empty-tip">还没有共性错词数据</div>' : `
+    <table class="wrong-table">
+      <thead><tr><th>单词</th><th>释义</th><th>几个孩子错过</th><th>谁在错</th></tr></thead>
+      <tbody>
+        ${shared.map(s => {
+          const who = store.children.filter(c => s[c.name]).map(c => `${c.name}(${s[c.name]}次)`).join('、');
+          return `<tr>
+            <td style="font-weight:600;font-family:Georgia,serif;color:#c0392b;">${s.word}</td>
+            <td style="color:#666;">${s.meaning}</td>
+            <td><span class="stage-badge">${s.childrenCount} 个</span></td>
+            <td style="font-size:12px;color:#888;">${who}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+
+  // 各孩子正确率与错词 Top3
+  const acc = $('#dashAccuracy');
+  acc.innerHTML = kids.length === 0 ? '<div class="empty-tip">暂无数据</div>' : kids.map(c => {
+    const a = getChildAccuracy(c.id);
+    const top = getChildWrongTop(c.id, 3, c.bookId);
+    return `
+      <div style="border:1px solid #eee;border-radius:10px;padding:12px 14px;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <b style="font-size:14px;">${c.name}</b>
+          <span style="font-size:12px;color:#888;">正确率：<b style="color:${a && a.rate >= 80 ? '#3b6d11' : a && a.rate >= 60 ? '#854f0b' : '#a32d2d'};">${a ? a.rate + '%' : '-'}</b></span>
+        </div>
+        <div style="font-size:12px;color:#666;">
+          ${top.length === 0 ? '暂无错词，太棒了！' : '易错词：' + top.map(t => `<b style="color:#a32d2d;">${t.word}</b>（${t.wrongCount}次）`).join('、')}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ---------- 词库 ----------
+function refreshWords() {
+  $('#wordTotalTag').textContent = getGlobalWords().length + ' 词';
+  renderLibList();
+  renderParentWords();
+}
+function renderLibList() {
+  const term = ($('#libSearch').value || '').trim().toLowerCase();
+  const words = getGlobalWords().filter(w => {
+    if (!term) return true;
+    return w.word.toLowerCase().includes(term) || (w.meaning || '').includes(term);
+  });
+  const bySrc = {};
+  words.forEach(w => { bySrc[w.source] = (bySrc[w.source] || 0) + 1; });
+  const srcInfo = Object.entries(bySrc).map(([s, n]) => `<span style="font-size:12px;color:#999;margin-right:12px;">${s} ${n} 词</span>`).join('');
+  $('#libWordList').innerHTML = `
+    <div style="padding:8px 12px;border-bottom:1px solid #f0f0f0;">${srcInfo}</div>
+    ${words.slice(0, 150).map(w => `
+      <div class="word-item" style="cursor:default;">
+        <span class="w">${w.word}</span>
+        <span class="m">${w.meaning || ''}</span>
+        <span class="src">${w.source}</span>
+      </div>`).join('')}
+    ${words.length > 150 ? `<div class="empty-tip">仅显示前 150 条，继续搜索缩小范围</div>` : ''}`;
+}
+function renderParentWords() {
+  // 家长上传词在词库总览中展示，这里补个管理入口
+  const pw = store.parentWords || [];
+  if (pw.length === 0) return;
+  const existing = $('#parentWordsBox');
+  if (existing) existing.remove();
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.id = 'parentWordsBox';
+  card.innerHTML = `
+    <div class="card-title">📤 家长上传的词（${pw.length}）</div>
+    <div class="word-list" style="max-height:240px;">
+      ${pw.map(w => `
+        <div class="word-item" style="cursor:default;">
+          <span class="w">${w.word}</span>
+          <span class="m">${w.meaning || ''}</span>
+          <button class="btn-mini" style="border-color:#ccc;color:#999;margin-left:auto;" onclick="removeParentWord('${w.id}');refreshWords();toast('已删除');">删除</button>
+        </div>`).join('')}
+    </div>`;
+  $('#page-words').appendChild(card);
+}
+function handleAddWords() {
+  const text = $('#addWordsText').value.trim();
+  if (!text) { toast('请粘贴单词内容'); return; }
+  const words = parseWordText(text);
+  if (words.length === 0) { toast('没有识别到有效单词，请检查格式'); return; }
+  addParentWords(words);
+  $('#addWordsText').value = '';
+  $('#addWordsResult').textContent = `✅ 已添加 ${words.length} 个词到家长上传词库`;
+  setTimeout(() => $('#addWordsResult').textContent = '', 4000);
+  refreshWords();
+}
+
+// 照片上传
+function bindUpload(areaId, inputId, previewId, isMulti) {
+  const area = document.getElementById(areaId);
+  const input = document.getElementById(inputId);
+  const preview = document.getElementById(previewId);
+  if (!area || !input) return;
+  area.addEventListener('click', () => input.click());
+  area.addEventListener('dragover', e => { e.preventDefault(); area.classList.add('dragover'); });
+  area.addEventListener('dragleave', () => area.classList.remove('dragover'));
+  area.addEventListener('drop', e => {
+    e.preventDefault(); area.classList.remove('dragover');
+    handleFiles(e.dataTransfer.files, input, preview, isMulti);
+  });
+  input.addEventListener('change', () => handleFiles(input.files, input, preview, isMulti));
+}
+function handleFiles(files, input, previewEl, isMulti) {
+  if (!files || files.length === 0) return;
+  const list = Array.from(files).slice(0, 6);
+  // 记录最近上传的照片供 OCR 使用
+  window.__ocrImages = window.__ocrImages || [];
+  list.forEach(f => {
+    if (!f.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      img.style.cssText = 'max-width:200px;max-height:200px;border-radius:8px;border:1px solid #eee;';
+      previewEl.appendChild(img);
+      // 记录第一个用于 OCR
+      if (window.__ocrImages.length < 6) {
+        window.__ocrImages.push({ src: e.target.result, name: f.name });
+      }
+    };
+    reader.readAsDataURL(f);
+  });
+  toast(`已载入 ${list.length} 张图片`);
+}
+
+// ---------- OCR 识别 ----------
+async function runOcr() {
+  const status = $('#ocrStatus');
+  if (!window.__ocrImages || window.__ocrImages.length === 0) {
+    status.textContent = '请先上传照片';
+    toast('请先上传照片');
+    return;
+  }
+  const imgData = window.__ocrImages[0];
+  status.textContent = '正在加载识别引擎（首次需下载，约 2-3MB）…';
+  $('#btnOcr').disabled = true;
+  try {
+    // 临时 img 元素
+    const img = document.createElement('img');
+    img.src = imgData.src;
+    await new Promise(res => img.onload = res);
+    status.textContent = '正在识别照片中的单词…';
+    const text = await ocrRecognizeImage(img);
+    // 解析单词
+    const words = parseOcrTextToWords(text);
+    if (words.length === 0) {
+      status.textContent = '⚠️ 没有识别出有效单词，可能是照片角度/光线问题，试试拍照发我人工识别。';
+      return;
+    }
+    // 填充文本框供核对
+    const lines = words.map(w => {
+      return `${w.word} ${w.phonetic ? w.phonetic : ''} ${w.pos ? w.pos + '. ' : ''}${w.meaning}`.trim();
+    }).join('\n');
+    $('#ocrWordsText').value = lines;
+    // 自动算下一个 DAY 编号（解析教材与 OCR 中的最大 DAY 数字）
+    let maxN = 0;
+    if (typeof VOCAB !== 'undefined') {
+      VOCAB.days.forEach(d => {
+        const m = d.title.match(/DAY\s*(\d+)/i);
+        if (m) maxN = Math.max(maxN, parseInt(m[1]));
+      });
+    }
+    Object.keys(store.ocrDays || {}).forEach(k => {
+      const m = k.match(/DAY\s*(\d+)/i);
+      if (m) maxN = Math.max(maxN, parseInt(m[1]));
+    });
+    $('#ocrDayTitle').value = 'DAY ' + (maxN + 1);
+    $('#ocrResultBox').style.display = 'block';
+    status.textContent = `✅ 识别出 ${words.length} 个单词，请核对后保存`;
+    toast(`识别完成：${words.length} 个词`);
+  } catch (e) {
+    console.error(e);
+    status.textContent = '❌ 识别失败：' + (e.message || '未知错误');
+  } finally {
+    $('#btnOcr').disabled = false;
+  }
+}
+function clearOcrResult() {
+  $('#ocrResultBox').style.display = 'none';
+  $('#ocrWordsText').value = '';
+  $('#ocrStatus').textContent = '';
+  $('#ocrSaveResult').textContent = '';
+}
+function saveOcrDay() {
+  const text = $('#ocrWordsText').value.trim();
+  let title = $('#ocrDayTitle').value.trim();
+  if (!text) { toast('识别结果为空'); return; }
+  const words = parseWordText(text);
+  if (words.length === 0) { toast('没有有效单词，请检查格式'); return; }
+  if (!store.ocrDays) store.ocrDays = {};
+  // 自动接续教材最大 DAY 编号（DAY 1-N 已存在，OCR 接 N+1）
+  if (!title || title.toUpperCase() === 'OCR DAY') {
+    let maxN = 0;
+    if (typeof VOCAB !== 'undefined') {
+      VOCAB.days.forEach(d => {
+        const m = d.title.match(/DAY\s*(\d+)/i);
+        if (m) maxN = Math.max(maxN, parseInt(m[1]));
+      });
+    }
+    Object.keys(store.ocrDays).forEach(k => {
+      const m = k.match(/DAY\s*(\d+)/i);
+      if (m) maxN = Math.max(maxN, parseInt(m[1]));
+    });
+    title = 'DAY ' + (maxN + 1);
+  }
+  store.ocrDays[title] = words;
+  saveStore();
+  $('#ocrSaveResult').textContent = `✅ 已保存「${title}」（${words.length} 词）`;
+  toast(`已保存 ${title}，${words.length} 词`);
+  refreshWords();
+  setTimeout(() => { $('#ocrSaveResult').textContent = ''; }, 4000);
+}
+
+// ---------- 默写纸 ----------
+let wsSrc = 'day';  // day | plan
+let wsBook = 'tj';  // tj | sishang —— 生成默写纸时显式选择的词库
+function setWsBook(book) {
+  wsBook = book;
+  const sel = $('#wsBookSelect');
+  if (sel) sel.value = book;
+  // 家长在生成页选了哪个版本，当前孩子就归到哪个版本（看板/错词隔离照常工作）
+  const child = getActiveChild();
+  if (child) { child.bookId = book; saveStore(); }
+  refreshWorksheet();
+  // 切换词库后，下拉是全新的节点列表，自动选中该词库「今日节点」一次（用户之后可手动改）
+  autoSelectTodayNode();
+}
+// 仅在切换词库 / 初始化时调用一次：把下拉默认选到该词库的今日节点
+// 平时用户手动选 DAY/单元 不会被覆盖
+function autoSelectTodayNode() {
+  const node = getTodayNodeForBook(wsBook, todayStr());
+  if (!node) return;
+  const m = Array.from($('#wsDaySelect').options).find(o => o.dataset.title === node.title);
+  if (m) $('#wsDaySelect').value = m.value;
+}
+function setWsSrc(src) {
+  wsSrc = 'day';
+  refreshWorksheet();
+}
+function setWsDir(dir) {
+  wsDir = dir;
+  $$('[data-wsdir]').forEach(b => b.classList.toggle('active', b.dataset.wsdir === dir));
+}
+function refreshWorksheet() {
+  // 词库切换时同步下拉与标签
+  const book = BOOKS[wsBook] || BOOKS.tj;
+  const sel = $('#wsBookSelect');
+  if (sel) sel.value = wsBook;
+  const dayLabel = $('#wsDayLabel');
+  if (dayLabel) dayLabel.textContent = '选择 ' + (book.nodeType === 'unit' ? '单元' : 'DAY');
+  if (wsSrc === 'day') {
+    fillWsDaySelect();
+    // 注意：此处不再强制选中今日节点，以免覆盖用户在 #wsDaySelect 上的手动选择
+  }
+  const info = getWsContentInfo();
+  $('#wsInfo').textContent = info;
+}
+// 获取当前默写纸内容信息（用于提示）
+function getWsContentInfo() {
+  const book = BOOKS[wsBook] || BOOKS.tj;
+  const sel = $('#wsDaySelect');
+  const opt = sel.selectedOptions[0];
+  if (!opt) return '请先选择 ' + (book.nodeType === 'unit' ? '单元' : 'DAY');
+  return `${book.name} · ${opt.textContent}`;
+}
+// 按显式选择的词库（wsBook）提供词表；两套词库绝不混
+function getDayGroups() {
+  const book = BOOKS[wsBook] || BOOKS.tj;
+  const groups = [];
+  if (book.id === 'sishang') {
+    if (typeof SISHANG_VOCAB !== 'undefined') {
+      SISHANG_VOCAB.units.forEach(u => {
+        groups.push({ label: '📘 四上', title: u.title, words: u.words.map(w => ({ ...w })), source: '四上', date: '' });
+      });
+    }
+  } else {
+    if (typeof VOCAB !== 'undefined') {
+      VOCAB.days.forEach(d => {
+        groups.push({ label: '📚 教材', title: d.title, words: d.words, source: '教材', date: '' });
+      });
+    }
+    if (typeof TJ_VOCAB !== 'undefined') {
+      TJ_VOCAB.levels.forEach(lv => {
+        lv.units.forEach(u => {
+          groups.push({
+            label: '🎯 ' + lv.name.split('·')[0],
+            title: u.title,
+            words: u.words.map(w => ({ word: w.w, phonetic: '', pos: '', meaning: w.m })),
+            source: '小托福',
+            date: ''
+          });
+        });
+      });
+    }
+    if (store.parentWords && store.parentWords.length) {
+      groups.push({ label: '📤 家长上传', title: '家长上传词', words: store.parentWords, source: '家长上传', date: '' });
+    }
+    if (store.ocrDays) {
+      Object.keys(store.ocrDays).forEach(k => {
+        groups.push({ label: '📷 照片识别', title: k, words: store.ocrDays[k], source: '照片识别', date: '' });
+      });
+    }
+  }
+  return groups;
+}
+function fillWsDaySelect() {
+  const sel = $('#wsDaySelect');
+  const prevTitle = sel.selectedOptions[0] ? sel.selectedOptions[0].dataset.title : '';
+  sel.innerHTML = '';
+  getDayGroups().forEach((g, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.dataset.count = g.words.length;
+    opt.dataset.title = g.title;
+    opt.dataset.source = g.source;
+    opt.dataset.date = g.date || '';
+    opt.textContent = `${g.label} · ${g.title}（${g.words.length} 词）`;
+    sel.appendChild(opt);
+  });
+  // 切换孩子/版本后尽量保留上次选择
+  if (prevTitle) {
+    const m = Array.from(sel.options).find(o => o.dataset.title === prevTitle);
+    if (m) sel.value = m.value;
+  }
+  // 若下拉没有选中项（首次进入 / 切词库后节点列表变化），自动选该词库今日节点
+  if (!sel.value) autoSelectTodayNode();
+}
+function findWordById(id) {
+  return getGlobalWords().find(w => w.id === id);
+}
+function generateWorksheet() {
+  const child = getActiveChild();
+  const name = $('#wsName').value || (child ? child.name : '') || '____';
+  let date = todayStr();
+  let sections = [];
+
+  // 内容来源：所选 DAY / 单元
+  const sel = $('#wsDaySelect');
+  const opt = sel.selectedOptions[0];
+  if (!opt) { toast('请先选择 DAY / 单元'); return; }
+  const groups = getDayGroups();
+  const g = groups[parseInt(opt.value)];
+  if (!g || g.words.length === 0) { toast('该单元没有词'); return; }
+  sections.push({ title: `${g.title}`, words: g.words.map(w => ({ ...w, reviewRound: undefined })), isReview: false });
+  date = opt.dataset.date || todayStr();
+
+  // 默认「统一 + 错题整理」：有当前孩子就自动带上他到期的艾宾浩斯复习词
+  if (child) {
+    const due = getDueReviewWords(child.id, todayStr(), child.bookId || 'tj');
+    if (due.length > 0) {
+      sections.push({ title: '复习区（艾宾浩斯到期）', words: due.map(w => ({ ...w })), isReview: true });
+    }
+    // 存档为当天作业，供「批改」页读取
+    const newWords = sections.filter(s => !s.isReview).reduce((a, s) => a.concat(s.words), []);
+    if (!store.assignments) store.assignments = {};
+    store.assignments[child.id + '|' + date] = {
+      date, bookId: child.bookId || 'tj', dir: wsDir,
+      words: newWords.map(w => ({ word: w.word, meaning: w.meaning || '', isReview: false }))
+    };
+    saveStore();
+  }
+
+  const allWords = sections.reduce((a, s) => a.concat(s.words), []);
+  const newCount = sections.filter(s => !s.isReview).reduce((a, s) => a + s.words.length, 0);
+  $('#wsInfo').textContent = `共 ${allWords.length} 词` + (sections.length > 1 ? `（新词 ${newCount} + 复习 ${allWords.length - newCount}）` : '');
+
+  renderWorksheet(sections, { date, name, mode: child ? 'mixed' : 'unified', dir: wsDir });
+}
+
+// 批量打印：为所有孩子各生成一张（按各自版本取今日节点 + 各自到期复习词），一次打印
+function batchPrintAllKids() {
+  const kids = getChildren();
+  if (kids.length === 0) { toast('还没有孩子，先添加孩子'); return; }
+  const date = todayStr();
+
+  let allPapers = [];
+  let okCount = 0;
+  kids.forEach(kid => {
+    const bid = kid.bookId || 'tj';
+    const node = getTodayNodeForBook(bid, date);
+    if (!node) return;
+    let sections = [{ title: node.title, words: node.words.map(w => ({ ...w, reviewRound: undefined })), isReview: false }];
+    const due = getDueReviewWords(kid.id, date, bid);
+    if (due.length > 0) {
+      sections.push({ title: '复习区（艾宾浩斯到期）', words: due.map(w => ({ ...w })), isReview: true });
+    }
+    // 用临时容器渲染该孩子的纸，收集 HTML
+    const tmp = document.createElement('div');
+    document.body.appendChild(tmp);
+    renderWorksheetTo(sections, { date, name: kid.name, mode: 'mixed', dir: wsDir }, tmp);
+    allPapers.push(tmp.innerHTML);
+    tmp.remove();
+    okCount++;
+  });
+
+  if (okCount === 0) { toast('没有可用的今日节点，请先设置学习起点或识别词库'); return; }
+  $('#wsPreview').innerHTML = allPapers.join('');
+  $('#wsInfo').textContent = `已生成 ${okCount} 个孩子的默写纸（按各自版本），点打印`;
+  setTimeout(() => window.print(), 150);
+}
+// 渲染默写纸头部（DAY 大字 + 标题 + 姓名/日期）
+function renderPaperHeader(opt, sections, formattedDate, name) {
+  const modeLabel = opt.dir === 'en2zh' ? '看英文写中文' : opt.dir === 'zh2en' ? '看中文写英文' : '左右对照';
+  // 找第一节的 title 作为 DAY 标题
+  const daySec = sections.find(s => !s.isReview) || sections[0];
+  const dayTitle = daySec ? daySec.title : '';
+  // 解析出 DAY / UNIT 数字 + 来源
+  let dayNum = null, kind = 'DAY';
+  const dm = dayTitle.match(/(DAY|UNIT)\s*(\d+)/i);
+  if (dm) { dayNum = dm[2]; kind = dm[1].toUpperCase(); }
+  // 显示来源标签
+  const sourceTag = daySec && daySec.source === '家长上传' ? '家长上传' :
+                    daySec && daySec.source === '今日计划' ? '今日计划' :
+                    daySec && daySec.source === '小托福' ? '小托福' :
+                    daySec && daySec.source === '四上' ? '沪教四上' :
+                    daySec && daySec.source === '照片识别' ? '📷 照片识别' : '';
+  const sub = sourceTag ? `${modeLabel} · ${sourceTag}` : `${modeLabel}${opt.mode === 'mixed' ? ' · 统一+错题整理' : ''}`;
+
+  const dayTagHtml = dayNum
+    ? `<span class="paper-day-tag">${kind}</span><span class="paper-day-num">${dayNum}</span>`
+    : `<span class="paper-day-tag" style="padding:6px 14px;font-size:13pt;letter-spacing:1px;">${dayTitle.slice(0,8) || 'A4 paper'}</span>`;
+  return `
+    <div class="paper-day-block">
+      ${dayTagHtml}
+      <div class="paper-day-sub">${dayTitle} · ${sub}</div>
+    </div>
+    <div class="paper-meta">
+      <div class="item"><span class="label">Name:</span><span class="value">${name}</span></div>
+      <div class="item"><span class="label">Date:</span><span class="value">${formattedDate}</span></div>
+    </div>
+  `;
+}
+
+function renderWorksheet(sections, opt) {
+  $('#wsPreview').innerHTML = buildWorksheetHtml(sections, opt);
+}
+// 渲染默写纸 HTML（供单页与批量打印共用）
+function renderWorksheetTo(sections, opt, targetEl) {
+  targetEl.innerHTML = buildWorksheetHtml(sections, opt);
+}
+// ===== 彩虹屁鼓励语库（儿童友好型网络热梗，正向积极）=====
+const PRAISE_LIST = [
+  '你简直是个小天才！',
+  '这波操作太秀了，YYDS！',
+  '今天的你闪闪发光 ✨',
+  '默写小能手就是你！',
+  '单词都听你的话啦，哈哈',
+  '你这记忆力，绝绝子！',
+  '小小单词，轻松拿捏 💪',
+  '你就是单词界的天花板',
+  '爱了爱了，这学习劲头',
+  '今日份的学霸已上线',
+  '你比昨天又强了一点点',
+  '家长看到你的努力啦',
+  '词汇量蹭蹭往上涨 🚀',
+  '你这状态，稳得一批',
+  '满分潜力股就是你了',
+  '小脑袋瓜真聪明',
+  '今天的努力会开花结果',
+  '你认真的样子真好看',
+  '单词在你面前瑟瑟发抖',
+  '继续保持，你超棒的！',
+  '你就是自己的小太阳 ☀️',
+  '这进度，我直接好家伙',
+  '聪明睿智如你，没谁了',
+  '未来的强者从背单词开始',
+  '你这学习力，泰裤辣'
+];
+// 随机取一句彩虹屁（按 name+date 做种子，同一孩子同一天保持一致，不至于每次刷新都变）
+function pickPraise(name, date, pageIdx) {
+  const seedStr = (name || 'kid') + '|' + (date || '') + '|' + pageIdx;
+  let h = 0;
+  for (let i = 0; i < seedStr.length; i++) h = (h * 31 + seedStr.charCodeAt(i)) >>> 0;
+  return PRAISE_LIST[h % PRAISE_LIST.length];
+}
+
+function buildWorksheetHtml(sections, opt) {
+  const { date, name, dir } = opt;
+  // 左右对照模式与普通模式均每页最多 25 词；超出自动分多张 A4
+  const PER_PAGE = 25;
+  const allRows = [];
+  sections.forEach(sec => {
+    allRows.push({ type: 'section', title: sec.title, isReview: sec.isReview });
+    sec.words.forEach((w, i) => {
+      allRows.push({ type: 'word', w, reviewRound: w.reviewRound });
+    });
+  });
+
+  // 分页
+  const pages = [];
+  let cur = [];
+  allRows.forEach(row => {
+    if (row.type === 'section') { cur.push(row); return; }
+    if (cur.filter(r => r.type === 'word').length >= PER_PAGE) {
+      pages.push(cur); cur = [];
+    }
+    cur.push(row);
+  });
+  if (cur.length > 0) pages.push(cur);
+  if (pages.length === 0) pages.push([]);
+
+  // 跨页连续编号：预先计算每页起始序号，避免第 2 页又从 1 开始
+  let _running = 0;
+  const pageStart = pages.map(p => {
+    const s = _running + 1;
+    _running += p.filter(r => r.type === 'word').length;
+    return s;
+  });
+
+  const modeLabel = dir === 'en2zh' ? '看英文写中文' : dir === 'zh2en' ? '看中文写英文' : '左右对照（英译中 + 中译英）';
+  const formattedDate = date.replace(/-/g, '.');
+  const modeClass = dir === 'zh2en' ? 'zh2en' : (dir === 'both' ? 'both' : 'en2zh');
+
+  return pages.map((rows, pi) => {
+    const start = pageStart[pi];   // 本页起始序号（跨页连续）
+    let idx = start - 1;
+    const praise = pickPraise(name, date, pi);  // 每张纸底部一句彩虹屁
+    const wordsOnly = rows.filter(r => r.type === 'word');
+
+    // ===== both 模式：左右两栏，中间对折，同一行左右对应 =====
+    if (dir === 'both') {
+      // 动态行高：让 N 个词 + 表头行 均匀填满 A4
+      // 可用区 = 297 - 上下padding(9) - 头部各块 - footer ≈ 227mm
+      // 钳制 [8, 16]mm：词少时不大于 16mm（避免行太空），词多时不小于 8mm（保证可写）
+      const lrRows = wordsOnly.length + 1; // +1 表头行
+      const _lrH = 227 / Math.max(lrRows, 1);
+      const rowH = Math.min(16, Math.max(8, _lrH)).toFixed(2);
+      const lrStyle = `--row-h:${rowH}mm`;
+      // 左栏：显示英文 → 右边横线写中文
+      // 右栏：显示中文 → 右边横线写英文
+      let lidx = start - 1, ridx = start - 1;
+      const buildCol = (row, isLeft) => {
+        if (row.type === 'section') {
+          return `<tr class="lr-section"><td colspan="4"><span class="sec-tag">◆</span> ${row.title}${row.isReview ? '（复习词）' : ''}</td></tr>`;
+        }
+        const n = isLeft ? ++lidx : ++ridx;
+        const w = row.w;
+        const reviewTag = row.reviewRound ? `<span class="review-tag">复习${row.reviewRound}天</span>` : '';
+        if (isLeft) {
+          // 左栏：英文 + 写中文的空横线
+          return `
+            <tr>
+              <td class="lr-idx">${n}</td>
+              <td class="lr-check"></td>
+              <td class="lr-word">${w.word}${w.phonetic ? `<span class="phonetic">${w.phonetic}</span>` : ''}${w.pos ? `<span class="pos">${w.pos}</span>` : ''}${reviewTag}</td>
+              <td class="lr-mean"></td>
+            </tr>`;
+        } else {
+          // 右栏：中文 + 写英文的空横线
+          return `
+            <tr>
+              <td class="lr-idx">${n}</td>
+              <td class="lr-check"></td>
+              <td class="lr-word lr-mean show">${w.meaning}${reviewTag}</td>
+              <td class="lr-mean"></td>
+            </tr>`;
+        }
+      };
+
+      const leftRows = rows.map(r => buildCol(r, true)).join('');
+      const rightRows = rows.map(r => buildCol(r, false)).join('');
+
+      return `
+        <div class="paper mode-both">
+          <div class="paper-top-stripe"></div>
+          <div class="paper-header">
+            ${renderPaperHeader(opt, sections, formattedDate, name)}
+          </div>
+          <div class="paper-subtitle">
+            <span>Title: ${opt.mode === 'mixed' ? '统一+错题整理' : '统一进度'} · ${modeLabel}</span>
+            <span>${wordsOnly.length} 词${pages.length > 1 ? ' · 第 ' + (pi + 1) + '/' + pages.length + ' 页' : ''}</span>
+          </div>
+          <div class="page-marker"><span>1</span><span>2</span><span>3</span><span>4</span></div>
+          <div class="lr-wrap">
+            <div class="lr-col left">
+              <div class="lr-col-title">← 看英文，写中文</div>
+              <table class="lr-table" style="${lrStyle}">
+                <tbody>
+                  <tr><td class="lr-idx" style="color:#bbb;"></td><td class="lr-check"></td><td class="lr-word" style="font-weight:400;font-size:8.5pt;color:#888;font-style:italic;">Word</td><td class="lr-mean" style="border-bottom:none;color:#888;font-size:8.5pt;font-style:italic;">Meaning</td></tr>
+                  ${leftRows}
+                </tbody>
+              </table>
+            </div>
+            <div class="lr-fold"></div>
+            <div class="lr-col right">
+              <div class="lr-col-title">看中文，写英文 →</div>
+              <table class="lr-table" style="${lrStyle}">
+                <tbody>
+                  <tr><td class="lr-idx" style="color:#bbb;"></td><td class="lr-check"></td><td class="lr-word" style="font-weight:400;font-size:8.5pt;color:#888;font-style:italic;">Word</td><td class="lr-mean" style="border-bottom:none;color:#888;font-size:8.5pt;font-style:italic;">Meaning</td></tr>
+                  ${rightRows}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="paper-footer">
+            <div class="signature">
+              <span class="label">家长签名:</span><span class="line"></span>
+              <span class="label" style="margin-left:14px">Score:</span>
+              <span class="score-box">正确 <span class="correct">　　　</span> / ${wordsOnly.length}</span>
+            </div>
+            <div class="page-num">— ${pi + 1} / ${pages.length} —</div>
+            <div class="paper-praise">✨ ${praise}</div>
+          </div>
+        </div>`;
+    }
+
+    // ===== 普通模式（en2zh / zh2en） =====
+    const body = rows.map(row => {
+      if (row.type === 'section') {
+        return `<tr class="section-row"><td colspan="4"><span class="sec-tag">◆</span> ${row.title}${row.isReview ? '（复习词，不占新词）' : ''}</td></tr>`;
+      }
+      ++idx;
+      const w = row.w;
+      if (dir === 'en2zh') {
+        return `
+          <tr>
+            <td class="idx">${idx}</td>
+            <td class="check"></td>
+            <td class="word">${w.word}${w.phonetic ? `<span class="phonetic">${w.phonetic}</span>` : ''}${w.pos ? `<span class="pos">${w.pos}</span>` : ''}${row.reviewRound ? `<span class="review-tag">复习第${row.reviewRound}天</span>` : ''}</td>
+            <td class="meaning"></td>
+          </tr>`;
+      } else {
+        return `
+          <tr>
+            <td class="idx">${idx}</td>
+            <td class="check"></td>
+            <td class="word meaning show">${w.meaning}${row.reviewRound ? `<span class="review-tag">复习第${row.reviewRound}天</span>` : ''}</td>
+            <td class="meaning"></td>
+          </tr>`;
+      }
+    }).join('');
+    // 动态行高：词少时行大写字宽松，词多分两页时各自撑满
+    // 可用区 = 297 - padding(38) - 头部 - subtitle - page-marker - footer ≈ 193mm
+    // 钳制 [8, 16]mm：词少 ≤ 16mm 不太空，词多 ≥ 8mm 保证可写
+    const nrRows = wordsOnly.length + 1; // +1 thead
+    const _nrH = 193 / Math.max(nrRows, 1);
+    const rowH = Math.min(16, Math.max(8, _nrH)).toFixed(2);
+    const rowStyle = `--row-h:${rowH}mm`;
+    return `
+      <div class="paper mode-${modeClass}">
+        <div class="paper-top-stripe"></div>
+        <div class="paper-header">
+          ${renderPaperHeader(opt, sections, formattedDate, name)}
+        </div>
+        <div class="paper-subtitle">
+          <span>Title: ${opt.mode === 'mixed' ? '统一+错题整理' : '统一进度'} · ${modeLabel}</span>
+          <span>${wordsOnly.length} 词${pages.length > 1 ? ' · 第 ' + (pi + 1) + '/' + pages.length + ' 页' : ''}</span>
+        </div>
+        <div class="page-marker"><span>1</span><span>2</span><span>3</span><span>4</span></div>
+        <table class="word-table" style="${rowStyle}">
+          <thead><tr><th class="idx">No.</th><th class="check">✓</th><th class="word">Word</th><th class="meaning">Meaning</th></tr></thead>
+          <tbody>${body}</tbody>
+        </table>
+        <div class="paper-footer">
+          <div class="signature">
+            <span class="label">家长签名:</span><span class="line"></span>
+            <span class="label" style="margin-left:14px">Score:</span>
+            <span class="score-box">正确 <span class="correct">　　　</span> / ${wordsOnly.length}</span>
+          </div>
+          <div class="page-num">— ${pi + 1} / ${pages.length} —</div>
+          <div class="paper-praise">✨ ${praise}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+function printWorksheet() {
+  if ($('#wsPreview').children.length === 0) { toast('先生成默写纸'); return; }
+  setTimeout(() => window.print(), 100);
+}
+
+// ---------- 下载 PDF（html2canvas + jsPDF，逐张渲染合并） ----------
+let _pdfLibPromise = null;
+function loadPdfLib() {
+  if (window.html2canvas && window.jspdf) return Promise.resolve();
+  if (_pdfLibPromise) return _pdfLibPromise;
+  _pdfLibPromise = new Promise((resolve, reject) => {
+    const c = document.createElement('script');
+    c.src = 'vendor/html2canvas.min.js';
+    c.onload = () => {
+      const j = document.createElement('script');
+      j.src = 'vendor/jspdf.umd.min.js';
+      j.onload = resolve; j.onerror = reject;
+      document.head.appendChild(j);
+    };
+    c.onerror = reject;
+    document.head.appendChild(c);
+  });
+  return _pdfLibPromise;
+}
+
+async function downloadPdf() {
+  const papers = document.querySelectorAll('#wsPreview .paper');
+  if (papers.length === 0) { toast('先生成默写纸'); return; }
+  toast('正在生成 PDF（首次需加载组件）…');
+  const btn = $('#btnDownloadPdf');
+  if (btn) { btn.disabled = true; btn.textContent = '生成中…'; }
+  try {
+    await loadPdfLib();
+    document.body.classList.add('pdf-gen');   // 截图期间移除 scale，按真实 A4 尺寸输出
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    for (let i = 0; i < papers.length; i++) {
+      const canvas = await html2canvas(papers[i], {
+        scale: 3,               // 约 290 DPI（A4 标准 300），接近印刷级清晰度
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
+      const img = canvas.toDataURL('image/png');   // 无损 PNG，文字边缘锐利
+      if (i > 0) pdf.addPage();
+      pdf.addImage(img, 'PNG', 0, 0, 210, 297);
+    }
+    pdf.save(worksheetPdfName());
+    toast('✅ PDF 已下载（高清版）');
+  } catch (e) {
+    console.error(e);
+    toast('PDF 生成失败：' + (e.message || '未知错误'));
+  } finally {
+    document.body.classList.remove('pdf-gen');
+    if (btn) { btn.disabled = false; btn.textContent = '⬇️ 下载 PDF'; }
+  }
+}
+
+function worksheetPdfName() {
+  const date = new Date();
+  const d = `${date.getFullYear()}${String(date.getMonth()+1).padStart(2,'0')}${String(date.getDate()).padStart(2,'0')}`;
+  const opt = $('#wsDaySelect').selectedOptions[0];
+  const title = opt ? opt.dataset.title : '默写纸';
+  return `默写纸_${title}_${d}.pdf`;
+}
+
+// ---------- 保存 A4 图片（手机友好：长按保存，微信/浏览器通用） ----------
+async function saveA4Images() {
+  const papers = document.querySelectorAll('#wsPreview .paper');
+  if (papers.length === 0) { toast('先生成默写纸'); return; }
+  toast('正在生成 A4 图片（每页一张，首次需加载组件）…');
+  const btn = $('#btnSaveImages');
+  if (btn) { btn.disabled = true; }
+  try {
+    await loadPdfLib();
+    document.body.classList.add('pdf-gen');   // 截图期间移除 scale，按真实 A4 尺寸输出
+    const imgs = [];
+    for (let i = 0; i < papers.length; i++) {
+      const canvas = await html2canvas(papers[i], {
+        scale: 3,               // 约 290 DPI，接近印刷级清晰度
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
+      imgs.push(canvas.toDataURL('image/png'));   // 无损 PNG
+    }
+    showA4ImagesModal(imgs);
+  } catch (e) {
+    console.error(e);
+    toast('图片生成失败：' + (e.message || '未知错误'));
+  } finally {
+    document.body.classList.remove('pdf-gen');
+    if (btn) { btn.disabled = false; }
+  }
+}
+
+function showA4ImagesModal(imgs) {
+  const name = worksheetPdfName().replace(/\.pdf$/, '');
+  const list = imgs.map((src, i) => `
+    <div class="a4img-item">
+      <img src="${src}" alt="第${i + 1}页A4">
+      <div class="a4img-bar">
+        <span>第 ${i + 1} / ${imgs.length} 页</span>
+        <a href="${src}" download="${name}_第${i + 1}页.png">⬇️ 下载原图</a>
+      </div>
+    </div>`).join('');
+  $('#a4ImagesList').innerHTML = list;
+  $('#a4ImagesModal').classList.add('show');
+}
+function closeA4ImagesModal() { $('#a4ImagesModal').classList.remove('show'); }
+
+// ---------- 批改 ----------
+function refreshGrading() {
+  const child = getActiveChild();
+  if (!child) return;
+  const date = $('#gradeDate').value || todayStr();
+  const box = $('#gradeList');
+  // 批改依据 = 当天在「默写纸」页为这孩子生成的作业（统一+错题整理）
+  const assign = (store.assignments || {})[child.id + '|' + date];
+  const words = assign && assign.words ? assign.words : [];
+  if (words.length === 0) {
+    box.innerHTML = `<div class="empty-tip">请先在「默写纸」页为 <b>${child.name}</b> 生成 ${date} 的默写纸（统一+错题整理），再回来批改。</div>`;
+    $('#reviewGradeSection').style.display = 'none';
+    return;
+  }
+  const key = date + '|' + child.id;
+  if (!box.dataset.built || box.dataset.date !== key) {
+    box.dataset.built = '1'; box.dataset.date = key;
+    box.innerHTML = words.map(w => `
+      <div class="grade-item" data-word="${w.word}">
+        <div>
+          <div class="g-word">${w.word}</div>
+          <div class="g-mean">${w.meaning || ''}</div>
+        </div>
+        <div class="grade-btns">
+          <button class="g-btn correct" title="对">✓</button>
+          <button class="g-btn wrong" title="错">✗</button>
+        </div>
+      </div>`).join('');
+    $$('#gradeList .g-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const item = this.closest('.grade-item');
+        item.querySelectorAll('.g-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+    $$('#gradeList .g-btn.correct').forEach(b => b.classList.add('active'));
+  }
+  // 复习区
+  renderReviewGrading(child.id, date);
+}
+function renderReviewGrading(childId, date) {
+  const due = getDueReviewWords(childId, date, (getChildren().find(c => c.id === childId) || {}).bookId);
+  const box = $('#reviewGradeList');
+  if (due.length === 0) {
+    $('#reviewGradeSection').style.display = 'none';
+    return;
+  }
+  $('#reviewGradeSection').style.display = 'block';
+  if (box.dataset.built && box.dataset.date === date) return;
+  box.dataset.built = '1'; box.dataset.date = date;
+  box.innerHTML = due.map(w => `
+    <div class="grade-item" data-word="${w.word}">
+      <div>
+        <div class="g-word">${w.word} <span class="stage-badge">复习第${w.reviewRound}天</span></div>
+        <div class="g-mean">${w.meaning}</div>
+      </div>
+      <div class="grade-btns">
+        <button class="g-btn correct" title="对">✓</button>
+        <button class="g-btn wrong" title="错">✗</button>
+      </div>
+    </div>`).join('');
+  $$('#reviewGradeList .g-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const item = this.closest('.grade-item');
+      item.querySelectorAll('.g-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+  $$('#reviewGradeList .g-btn.correct').forEach(b => b.classList.add('active'));
+}
+function submitGradingPage() {
+  const child = getActiveChild();
+  if (!child) { toast('请先选择孩子'); return; }
+  const date = $('#gradeDate').value || todayStr();
+  const items = $$('#gradeList .grade-item');
+  if (items.length === 0) { toast('没有可批改的词'); return; }
+  const results = Array.from(items).map(item => {
+    const wrong = item.querySelector('.g-btn.wrong.active');
+    return { word: item.dataset.word, correct: !wrong };
+  });
+  const r = submitGrading(child.id, results, date, getActiveBook(child).id);
+  $('#gradeResult').textContent = `✅ 全对 ${r.correctCount} / ${r.total}，错 ${r.wrongWords.length} 词已进错题本`;
+  toast(`批改完成：错 ${r.wrongWords.length} 词已进错题本`);
+  delete items[0].closest('#gradeList').dataset.built;
+  refreshDashboard();
+}
+function submitReviewPage() {
+  const child = getActiveChild();
+  if (!child) { toast('请先选择孩子'); return; }
+  const date = $('#gradeDate').value || todayStr();
+  const items = $$('#reviewGradeList .grade-item');
+  if (items.length === 0) { toast('没有复习词'); return; }
+  const results = Array.from(items).map(item => {
+    const wrong = item.querySelector('.g-btn.wrong.active');
+    return { word: item.dataset.word, correct: !wrong };
+  });
+  const r = submitReview(child.id, results, date);
+  $('#reviewGradeResult').textContent = `✅ 复习批改完成：对 ${r.correct} / ${r.total}`;
+  toast('复习批改完成');
+  const box = $('#reviewGradeList'); box.dataset.built = ''; box.innerHTML = '';
+  $('#reviewGradeSection').style.display = 'none';
+  refreshDashboard();
+}
+
+// ---------- 错题本 ----------
+function refreshWrong() {
+  const child = getActiveChild();
+  if (!child) { $('#wrongList').innerHTML = '<div class="empty-tip">请先添加孩子</div>'; return; }
+  const bookName = child.bookId === 'sishang' ? '沪教四上' : '小托福';
+  $('#wrongChildTag').textContent = child.name + '（' + bookName + '）';
+  const cd = getChildData(child.id);
+  const bid = child.bookId || 'tj';
+  const wrong = Object.values(cd.wrong || {}).filter(w => (w.bookId || 'tj') === bid);
+  const date = todayStr();
+  if (wrong.length === 0) {
+    $('#wrongList').innerHTML = '<div class="empty-tip">「' + bookName + '」还没有错词，继续加油！</div>';
+    return;
+  }
+  wrong.sort((a, b) => (a.nextReview || '') < (b.nextReview || '') ? -1 : 1);
+  $('#wrongList').innerHTML = `
+    <table class="wrong-table">
+      <thead><tr><th>单词</th><th>释义</th><th>错几次</th><th>复习阶段</th><th>下次复习</th><th>状态</th></tr></thead>
+      <tbody>
+        ${wrong.map(w => {
+          const due = w.nextReview && w.nextReview <= date;
+          return `<tr>
+            <td style="font-weight:600;font-family:Georgia,serif;">${w.word}</td>
+            <td style="color:#666;">${w.meaning || ''}</td>
+            <td>${w.wrongCount} 次</td>
+            <td><span class="stage-badge">第 ${w.stage + 1} 阶段</span></td>
+            <td>${w.nextReview || '-'}</td>
+            <td>${due ? '<span class="due-badge">到期复习</span>' : '<span style="color:#aaa;">未到期</span>'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+function printWrongBook() {
+  const child = getActiveChild();
+  if (!child) return;
+  const cd = getChildData(child.id);
+  const bid = child.bookId || 'tj';
+  const wrong = Object.values(cd.wrong || {}).filter(w => (w.bookId || 'tj') === bid);
+  if (wrong.length === 0) { toast('没有错词'); return; }
+  const date = todayStr();
+  const due = wrong.filter(w => w.nextReview && w.nextReview <= date);
+  const notDue = wrong.filter(w => !due.includes(w));
+  const sections = [];
+  if (due.length) sections.push({ title: '到期复习词（艾宾浩斯）', words: due });
+  if (notDue.length) sections.push({ title: '未到期错词', words: notDue });
+  renderWorksheet(sections.map(s => ({
+    title: s.title,
+    words: s.words.map(w => ({
+      word: w.word, phonetic: w.phonetic || '', pos: w.pos || '', meaning: w.meaning || '', reviewRound: w.stage + 1
+    })),
+    isReview: true
+  })), { date, name: child.name, mode: 'wrong', dir: 'en2zh' });
+  toast('错题本已生成，点击打印');
+}
+
+// ---------- 日历 ----------
+function refreshCalendar() {
+  const child = getActiveChild();
+  if (!child) return;
+  const cd = getChildData(child.id);
+  const now = new Date();
+  const view = new Date(now.getFullYear(), now.getMonth() + calOffset, 1);
+  $('#calMonthLabel').textContent = `${view.getFullYear()} 年 ${view.getMonth() + 1} 月`;
+  const y = view.getFullYear(), m = view.getMonth();
+  const firstDay = new Date(y, m, 1).getDay(); // 0=周日
+  const firstOffset = (firstDay + 6) % 7;      // 周一开头
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const cells = [];
+  for (let i = 0; i < firstOffset; i++) cells.push('<div class="cal-day future"></div>');
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const rec = cd.calendar[ds];
+    const isFuture = ds > todayStr();
+    let cls = 'cal-day';
+    let content = `<div class="d">${d}</div>`;
+    if (rec && !isFuture) {
+      cls += ' ' + rec.status;
+      content += `<div class="cnt">新词 ${rec.newWords}<br>对 ${rec.correctCount} · 错 ${rec.wrongCount}</div>`;
+      if (rec.reviewCount) content += `<div class="cnt" style="color:#7a5c00;">复习 ${rec.reviewCorrect}/${rec.reviewCount}</div>`;
+    } else if (isFuture) {
+      cls += ' future';
+    } else {
+      content += `<div class="cnt" style="color:#ccc;">未完成</div>`;
+    }
+    cells.push(`<div class="${cls}">${content}</div>`);
+  }
+  $('#calGrid').innerHTML = cells.join('');
+}
+function calShiftMonth(d) {
+  calOffset += d;
+  refreshCalendar();
+}
+
+// ---------- Toast ----------
+let toastTimer = null;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ---------- 事件绑定 ----------
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+  // tabs
+  $$('.nav-tab').forEach(t => t.addEventListener('click', () => goPage(t.dataset.page)));
+  // 搜索输入防抖
+  let t2;
+  $('#libSearch').addEventListener('input', () => { clearTimeout(t2); t2 = setTimeout(renderLibList, 200); });
+  // 日期变化刷新
+  $('#wsDaySelect').addEventListener('change', refreshWorksheet);
+  $('#wsBookSelect').addEventListener('change', e => setWsBook(e.target.value));
+  $('#gradeDate').addEventListener('change', () => {
+    const box = $('#gradeList'); if (box) { box.dataset.built = ''; }
+    const rb = $('#reviewGradeList'); if (rb) { rb.dataset.built = ''; }
+    refreshGrading();
+  });
+  // 上传
+  bindUpload('uploadArea', 'uploadInput', 'uploadPreview', true);
+  bindUpload('gradeUploadArea', 'gradeUploadInput', 'gradePhotoPreview', false);
+  // OCR
+  const ocrBtn = $('#btnOcr');
+  if (ocrBtn) ocrBtn.addEventListener('click', runOcr);
+});
+</script>
+</body>
+</html>
