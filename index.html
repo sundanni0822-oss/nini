@@ -408,9 +408,9 @@ body.pdf-gen .paper { transform: none !important; }
   <div class="card">
     <div class="card-title">📌 今日任务 <span class="tag" id="dashChildTag">未选孩子</span> <span class="tag" id="dashBookTag" style="background:#185fa5;color:#fff;">小托福</span></div>
     <div class="grid-3" style="margin-bottom:6px;">
-      <div class="stat-card">"stat-num" id="dashNewCount">-</div>"stat-label">今日计划新词</div></div>
-      <div class="stat-card">"stat-num" id="dashDueCount">-</div>"stat-label">今日到期复习</div></div>
-      <div class="stat-card">"stat-num" id="dashWrongTotal">-</div>"stat-label">错题本总数</div></div>
+      <div class="stat-card"><div class="stat-num" id="dashNewCount">-</div><div class="stat-label">今日计划新词</div></div>
+      <div class="stat-card"><div class="stat-num" id="dashDueCount">-</div><div class="stat-label">今日到期复习</div></div>
+      <div class="stat-card"><div class="stat-num" id="dashWrongTotal">-</div><div class="stat-label">错题本总数</div></div>
     </div>
     <div id="dashPlanBox" style="margin-top:10px;"></div>
     <div id="dashLearnBox"></div>
@@ -427,9 +427,9 @@ body.pdf-gen .paper { transform: none !important; }
   <div class="card" style="border-left:4px solid #c0392b;">
     <div class="card-title">📊 班级看板 · <span id="dashGroupName">我的班级</span> <span class="tag" id="dashTodayTag">-</span></div>
     <div class="grid-3" style="margin-bottom:6px;">
-      <div class="stat-card">"stat-num" id="dashTotalKids">-</div>"stat-label">班级孩子数</div></div>
-      <div class="stat-card">"stat-num" id="dashCheckedToday">-</div>"stat-label">昨日已打卡</div></div>
-      <div class="stat-card">"stat-num" id="dashMissedToday">-</div>"stat-label">昨日缺卡</div></div>
+      <div class="stat-card"><div class="stat-num" id="dashTotalKids">-</div><div class="stat-label">班级孩子数</div></div>
+      <div class="stat-card"><div class="stat-num" id="dashCheckedToday">-</div><div class="stat-label">昨日已打卡</div></div>
+      <div class="stat-card"><div class="stat-num" id="dashMissedToday">-</div><div class="stat-label">昨日缺卡</div></div>
     </div>
     <div id="dashMissedWarn" style="margin-top:10px;"></div>
   </div>
@@ -556,13 +556,13 @@ body.pdf-gen .paper { transform: none !important; }
         <div class="upload-area" id="gradeUploadArea">点击选择默写纸照片</div>
         <input type="file" id="gradeUploadInput" accept="image/*" style="display:none">
         <div class="photo-preview" id="gradePhotoPreview"></div>
-        <div id= ocrStatus  style= display:none;margin-top:8px;font-size:12px; ></div>
+        <div id="ocrStatus" style="display:none;margin-top:8px;font-size:12px;"></div>
         <div style="margin-top:12px;font-size:12px;color:#888;">
           也可以直接拍照发我，我帮你识别哪些词写错了。
         </div>
       </div>
       <div>
-        <label class="lbl">正确答案对照表（逐词点对/错）<span style= font-size:11px;color:#888;margin-left:8px; >上传照片后自动识别 √/×</span></label>
+        <label class="lbl">正确答案对照表（逐词点对/错）<span style="font-size:11px;color:#888;margin-left:8px;">上传照片后自动识别</span></label>
         <div id="gradeList"></div>
         <div style="margin-top:12px;display:flex;gap:10px;align-items:center;">
           <button class="btn btn-primary btn-sm" onclick="submitGradingPage()">提交批改结果</button>
@@ -606,8 +606,8 @@ body.pdf-gen .paper { transform: none !important; }
       <button class="btn btn-ghost btn-sm" onclick="calShiftMonth(0)">回到本月</button>
     </div>
     <div class="calendar-weekdays" style="display:grid;grid-template-columns:repeat(7,1fr);">
-      <div class="cal-weekday">一</div>"cal-weekday">二</div>"cal-weekday">三</div>
-      <div class="cal-weekday">四</div>"cal-weekday">五</div>"cal-weekday">六</div>
+      <div class="cal-weekday">一</div><div class="cal-weekday">二</div><div class="cal-weekday">三</div>
+      <div class="cal-weekday">四</div><div class="cal-weekday">五</div><div class="cal-weekday">六</div>
       <div class="cal-weekday">日</div>
     </div>
     <div class="calendar-grid" id="calGrid"></div>
@@ -1155,19 +1155,6 @@ function handleFiles(files, input, previewEl, isMulti) {
       if (window.__ocrImages.length < 6) {
         window.__ocrImages.push({ src: e.target.result, name: f.name });
       }
-      // 批改页上传照片后自动触发 OCR 辅助批改
-      if (previewEl.id === 'gradePhotoPreview') {
-        runAutoGrading(e.target.result);
-      }
-    };
-      const img = document.createElement('img');
-      img.src = e.target.result;
-      img.style.cssText = 'max-width:200px;max-height:200px;border-radius:8px;border:1px solid #eee;';
-      previewEl.appendChild(img);
-      // 记录第一个用于 OCR
-      if (window.__ocrImages.length < 6) {
-        window.__ocrImages.push({ src: e.target.result, name: f.name });
-      }
     };
     reader.readAsDataURL(f);
   });
@@ -1230,37 +1217,30 @@ async function runOcr() {
 // OCR 辅助批改：上传照片后自动识别手写答案和 √/× 标记
 async function runAutoGrading(imageDataUrl) {
   const statusEl = document.getElementById('ocrStatus');
-  if (statusEl) { statusEl.style.display = 'block'; statusEl.textContent = '🔄 正在识别照片...'; statusEl.style.color = '#888'; }
-
+  if (statusEl) { statusEl.style.display = 'block'; statusEl.textContent = '正在识别照片...'; statusEl.style.color = '#888'; }
   try {
     const img = new Image();
     img.src = imageDataUrl;
     await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; });
-
     const ocrResult = await ocrRecognizeImage(img, true);
     const items = document.querySelectorAll('#gradeList .grade-item');
     const targetWords = Array.from(items).map(item => ({ word: item.dataset.word }));
-
     if (targetWords.length === 0) {
-      if (statusEl) { statusEl.textContent = '⚠️ 没有可批改的词'; statusEl.style.color = '#a32d2d'; }
+      if (statusEl) { statusEl.textContent = '没有可批改的词'; statusEl.style.color = '#a32d2d'; }
       return;
     }
-
     const analysis = analyzeGradingPhoto(ocrResult, targetWords);
     let autoChecked = 0;
     let uncertain = 0;
-
     analysis.forEach(result => {
-      const item = document.querySelector(`#gradeList .grade-item[data-word="${result.word}"]`);
+      const item = document.querySelector('#gradeList .grade-item[data-word="' + result.word + '"]');
       if (!item) return;
-
-      // 显示 OCR 识别结果
       const wordDiv = item.querySelector('.g-word');
       if (wordDiv) {
         let ocrHint = '';
-        if (result.hasCheck) ocrHint = '✓ 检测到对勾';
-        else if (result.hasCross) ocrHint = '✗ 检测到叉号';
-        else if (result.recognizedText) ocrHint = `识别到: "${result.recognizedText}"`;
+        if (result.hasCheck) ocrHint = ' [OCR: 对勾]';
+        else if (result.hasCross) ocrHint = ' [OCR: 叉号]';
+        else if (result.recognizedText) ocrHint = ' [识别: ' + result.recognizedText + ']';
         if (ocrHint) {
           const existingHint = wordDiv.querySelector('.ocr-hint');
           if (existingHint) existingHint.remove();
@@ -1271,10 +1251,8 @@ async function runAutoGrading(imageDataUrl) {
           wordDiv.appendChild(hintEl);
         }
       }
-
       const correctBtn = item.querySelector('.g-btn.correct');
       const wrongBtn = item.querySelector('.g-btn.wrong');
-
       if (result.hasCheck) {
         correctBtn.classList.add('active');
         wrongBtn.classList.remove('active');
@@ -1291,21 +1269,16 @@ async function runAutoGrading(imageDataUrl) {
         uncertain++;
       }
     });
-
     if (statusEl) {
-      statusEl.innerHTML = `✅ 自动识别完成：已标 ${autoChecked} 词，待确认 ${uncertain} 词。请检查并修正。`;
+      statusEl.innerHTML = '自动识别完成：已标 ' + autoChecked + ' 词，待确认 ' + uncertain + ' 词。请检查并修正。';
       statusEl.style.color = '#3b6d11';
     }
-    toast(`识别完成：${autoChecked} 词已自动标记`);
   } catch (err) {
     console.error('OCR 批改失败:', err);
-    if (statusEl) { statusEl.textContent = '⚠️ 识别失败，请手动批改'; statusEl.style.color = '#a32d2d'; }
+    if (statusEl) { statusEl.textContent = '识别失败，请手动批改'; statusEl.style.color = '#a32d2d'; }
   }
 }
 
-function clearOcrResult() {
-  }
-}
 function clearOcrResult() {
   $('#ocrResultBox').style.display = 'none';
   $('#ocrWordsText').value = '';
@@ -1981,11 +1954,9 @@ function submitGradingPage() {
   const date = $('#gradeDate').value || todayStr();
   const items = $$('#gradeList .grade-item');
   if (items.length === 0) { toast('没有可批改的词'); return; }
-  // 检查是否有未批改的词（既没有选对也没有选错）
   const unchecked = Array.from(items).filter(item => !item.querySelector('.g-btn.active'));
   if (unchecked.length > 0) {
-    toast(`还有 ${unchecked.length} 个词未批改，请逐词点选对或错`);
-    // 滚动到第一个未批改的词
+    toast('还有 ' + unchecked.length + ' 个词未批改，请逐词点选对或错');
     unchecked[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
@@ -2005,10 +1976,9 @@ function submitReviewPage() {
   const date = $('#gradeDate').value || todayStr();
   const items = $$('#reviewGradeList .grade-item');
   if (items.length === 0) { toast('没有复习词'); return; }
-  // 检查是否有未批改的词
   const unchecked = Array.from(items).filter(item => !item.querySelector('.g-btn.active'));
   if (unchecked.length > 0) {
-    toast(`还有 ${unchecked.length} 个复习词未批改，请逐词点选对或错`);
+    toast('还有 ' + unchecked.length + ' 个复习词未批改，请逐词点选对或错');
     unchecked[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
